@@ -28,7 +28,7 @@ ADR Analysis is a cutting-edge healthcare application that combines:
 - **GPT-4o integration** for intelligent risk assessment
 - **Personalized recommendations** based on health profiles
 - **Specialist recommendations** from 18 medical specialties
-- **Alternative medication suggestions**
+- **Comprehensive alternative suggestions** including modern pharmaceutical and Ayurvedic alternatives
 
 ### 👥 **Multi-User System**
 - **Patient Dashboard** - Medication analysis and health tracking
@@ -38,6 +38,8 @@ ADR Analysis is a cutting-edge healthcare application that combines:
 ### 📊 **Comprehensive Reporting**
 - **Risk percentage calculation** based on FDA data
 - **Detailed adverse event analysis**
+- **Modern pharmaceutical alternatives** with reasoning
+- **Ayurvedic alternatives** with herbs, formulations, and preparation methods
 - **Lifestyle recommendations** (Diet, Exercise, Monitoring)
 - **Historical assessment tracking**
 
@@ -162,6 +164,13 @@ ADR-Analysis/
 - **Ibuprofen**: `DRUG INEFFECTIVE, PAIN, FATIGUE, NAUSEA, HEADACHE`
 - **Aspirin**: `FATIGUE, NAUSEA, DRUG INEFFECTIVE, DYSPNOEA, OFF LABEL USE`
 - **Metformin**: `NAUSEA, BLOOD GLUCOSE INCREASED, DIARRHOEA, DRUG INEFFECTIVE, FATIGUE`
+
+### 🌿 Ayurvedic Alternatives Examples
+- **Pain Medications**: Ashwagandha, Turmeric, Ginger, Boswellia
+- **Anti-inflammatory**: Turmeric, Ginger, Boswellia, Guggulu
+- **Diabetes**: Bitter Gourd, Fenugreek, Cinnamon, Gymnema
+- **Hypertension**: Arjuna, Sarpagandha, Brahmi, Jatamansi
+- **Digestive**: Triphala, Ginger, Fennel, Peppermint
 
 ## 🔒 Security & Privacy
 
