@@ -25,10 +25,11 @@ ADR Analysis is a cutting-edge healthcare application that combines:
 - **Fallback system** for common medications
 
 ### 🤖 **AI-Powered Analysis**
-- **GPT-4o integration** for intelligent risk assessment
+- **Latest AI model integration** (GPT-4o) for intelligent risk assessment
 - **Personalized recommendations** based on health profiles
 - **Specialist recommendations** from 18 medical specialties
 - **Alternative medication suggestions**
+- **Configurable model selection** for future upgrades
 
 ### 👥 **Multi-User System**
 - **Patient Dashboard** - Medication analysis and health tracking
@@ -115,6 +116,26 @@ ADR-Analysis/
 4. **Real adverse event data** is retrieved from FAERS
 5. **AI analysis** uses this data for risk assessment
 
+## 🤖 AI Model Configuration
+
+### Current Model
+The application uses **GPT-4o** (the latest stable model) for AI analysis. This model provides:
+- **Advanced reasoning** for complex medical data analysis
+- **Accurate risk assessment** based on FDA adverse event data
+- **Reliable JSON output** for structured responses
+- **Image analysis capabilities** for medical image processing
+
+### Available Models
+The system is configured to easily switch between available models:
+- `openai/gpt-4o` - Latest stable model (current)
+- `openai/gpt-4o-mini` - Faster, more cost-effective option
+- `anthropic/claude-3-5-sonnet` - Alternative AI model
+
+### Future Model Updates
+When GPT-5 becomes publicly available through GitHub AI, you can easily update the model by changing the `AI_MODEL` constant in:
+- `backend/index.js`
+- `api/ai-assistant.js`
+
 ### Supported Drug Mappings
 - `paracetamol` → `acetaminophen`
 - `tylenol` → `acetaminophen`
@@ -183,12 +204,12 @@ ADR-Analysis/
 - **Node.js** - Server runtime
 - **Express.js** - Web framework
 - **FDA API** - Real adverse event data
-- **GitHub AI Models** - GPT-4o integration
+- **GitHub AI Models** - Latest AI model integration (GPT-4o)
 - **Multer** - File upload handling
 
 ### APIs & Integrations
 - **FDA Adverse Event Reporting System (FAERS)** - Real medication data
-- **GitHub AI Models** - Advanced AI analysis
+- **GitHub AI Models** - Advanced AI analysis (GPT-4o)
 - **RxNav API** - Medication name suggestions
 
 ## 📈 Project Impact
