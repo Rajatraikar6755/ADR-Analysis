@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
+const { getAdverseEvents } = require('./fda-api.js');
 
 let fetch;
 
@@ -81,9 +82,17 @@ const startServer = async () => {
         return res.status(500).json({ error: 'GitHub API token is not configured.' });
     }
     try {
-        const medications = req.body.medications || '[]';
+        const medications = JSON.parse(req.body.medications || '[]');
         const conditions = req.body.conditions || 'No additional conditions provided.';
-        const healthProfile = req.body.healthProfile || '{}';
+        const healthProfile = JSON.parse(req.body.healthProfile || '{}');
+
+        let fdaData = '';
+        for (const med of medications) {
+            const events = await getAdverseEvents(med.name); // This will now work correctly
+            if (events.length > 0) {
+                fdaData += `\n- Top 5 reported adverse events for ${med.name} (from FAERS): ${events.join(', ')}.`;
+            }
+        }
         const documentFile = req.file;
         let documentText = 'No document provided.';
         if (documentFile) {
@@ -96,7 +105,7 @@ const startServer = async () => {
             **CRITICAL INSTRUCTIONS:**
             1.  **DO NOT PROVIDE MEDICAL ADVICE.**
             2.  **START EVERY RESPONSE WITH A DISCLAIMER.**
-            3.  **Analyze Holistically:** Consider ALL provided data.
+            3.  **Synthesize, Don't Just Repeat:** Do not simply list the adverse events. Synthesize them with the patient's health profile to determine the most relevant risks. For example, if a drug lists "dizziness" and the patient has a history of falls, highlight this specific risk.
             4.  **Recommend a Specialist:** Based on the primary health issues, you MUST recommend ONE specialist from this exact list: [${availableSpecialties.join(", ")}]. If no specialist is clearly relevant, return an empty string for this field.
             5.  **Output Format:** You MUST respond with a single, minified JSON object with the following structure:
                 {
@@ -109,11 +118,23 @@ const startServer = async () => {
         `;
 
         const userPrompt = `
-          Analyze the following data and provide your assessment in the required JSON format.
-          - Health Profile: ${healthProfile}
-          - Medications: ${medications}
-          - Conditions: ${conditions}
-          - Document Info: ${documentText}
+          Please analyze the following data.
+          **1. Real-World Data from FDA Adverse Event Reporting System (FAERS):**
+          ${fdaData || "No specific adverse event data was found for the provided medications. Please proceed with your general knowledge."}
+
+          **2. Patient Health Profile:**
+          ${JSON.stringify(healthProfile)}
+
+          **3. Current Medications for this Analysis:**
+          ${JSON.stringify(medications)}
+
+          **4. Additional Conditions:**
+          ${conditions}
+          
+          **5. Document Info:**
+          ${documentText}
+          Now, provide your expert analysis in the required JSON format.
+          
         `;
 
         const response = await fetch(GITHUB_MODELS_ENDPOINT, {
