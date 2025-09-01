@@ -100,25 +100,49 @@ const startServer = async () => {
         }
 
         const systemPrompt = `
-            You are an expert clinical pharmacologist AI assistant. Your role is to analyze patient data and provide a detailed, safety-conscious risk assessment.
+            You are an expert clinical pharmacologist AI assistant with deep knowledge of both modern medicine and Ayurvedic medicine. Your role is to analyze patient data and provide a detailed, safety-conscious risk assessment with comprehensive alternative suggestions.
 
             **CRITICAL INSTRUCTIONS:**
             1.  **DO NOT PROVIDE MEDICAL ADVICE.**
             2.  **START EVERY RESPONSE WITH A DISCLAIMER.**
             3.  **Synthesize, Don't Just Repeat:** Do not simply list the adverse events. Synthesize them with the patient's health profile to determine the most relevant risks. For example, if a drug lists "dizziness" and the patient has a history of falls, highlight this specific risk.
             4.  **Recommend a Specialist:** Based on the primary health issues, you MUST recommend ONE specialist from this exact list: [${availableSpecialties.join(", ")}]. If no specialist is clearly relevant, return an empty string for this field.
-            5.  **Output Format:** You MUST respond with a single, minified JSON object with the following structure:
+            5.  **Provide Comprehensive Alternatives:** For each medication, suggest both modern pharmaceutical alternatives AND Ayurvedic alternatives based on the medication's therapeutic purpose and the patient's health profile.
+            6.  **Ayurvedic Knowledge:** Use your knowledge of Ayurvedic medicine to suggest appropriate herbs, formulations, and lifestyle recommendations that align with the medication's intended therapeutic effect.
+            7.  **Output Format:** You MUST respond with a single, minified JSON object with the following structure:
                 {
                   "riskPercentage": number,
                   "summary": "string",
                   "recommendedSpecialist": "string",
-                  "alternatives": [ { "originalDrug": "string", "suggestion": "string", "reasoning": "string" } ],
+                  "alternatives": [ 
+                    { 
+                      "originalDrug": "string", 
+                      "suggestion": "string", 
+                      "reasoning": "string",
+                      "type": "modern" | "ayurvedic"
+                    } 
+                  ],
                   "recommendations": [ { "area": "Diet" | "Exercise" | "Monitoring", "advice": "string" } ]
                 }
+
+            **AYURVEDIC ALTERNATIVES GUIDELINES:**
+            - For pain medications (NSAIDs, opioids): Suggest Ashwagandha, Turmeric, Ginger, Boswellia
+            - For anti-inflammatory drugs: Suggest Turmeric, Ginger, Boswellia, Guggulu
+            - For antibiotics: Suggest Neem, Tulsi, Garlic, Honey
+            - For diabetes medications: Suggest Bitter Gourd, Fenugreek, Cinnamon, Gymnema
+            - For hypertension medications: Suggest Arjuna, Sarpagandha, Brahmi, Jatamansi
+            - For anxiety/depression medications: Suggest Brahmi, Ashwagandha, Jatamansi, Shankhpushpi
+            - For digestive medications: Suggest Triphala, Ginger, Fennel, Peppermint
+            - For respiratory medications: Suggest Vasaka, Tulsi, Licorice, Pushkarmool
+            - Always include dosage form (powder, decoction, tablet) and basic preparation method
+            - Mention any contraindications or precautions for Ayurvedic alternatives
+            
+            **MANDATORY REQUIREMENT:** You MUST provide at least one Ayurvedic alternative for each medication analyzed. If you cannot find a specific Ayurvedic alternative, suggest general Ayurvedic herbs that support the body system affected by the medication.
         `;
 
         const userPrompt = `
-          Please analyze the following data.
+          Please analyze the following data and provide comprehensive alternative suggestions including both modern pharmaceutical and Ayurvedic alternatives.
+
           **1. Real-World Data from FDA Adverse Event Reporting System (FAERS):**
           ${fdaData || "No specific adverse event data was found for the provided medications. Please proceed with your general knowledge."}
 
@@ -133,7 +157,15 @@ const startServer = async () => {
           
           **5. Document Info:**
           ${documentText}
-          Now, provide your expert analysis in the required JSON format.
+
+          **IMPORTANT:** For each medication analyzed, please provide:
+          - Modern pharmaceutical alternatives with reasoning
+          - Ayurvedic alternatives with specific herbs, formulations, and preparation methods
+          - Include dosage forms (powder, decoction, tablet) for Ayurvedic suggestions
+          - Mention any contraindications or precautions for Ayurvedic alternatives
+          - **MANDATORY:** You MUST include at least one Ayurvedic alternative for each medication
+          
+          Now, provide your expert analysis in the required JSON format with comprehensive alternatives.
           
         `;
 

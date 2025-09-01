@@ -24,6 +24,7 @@ interface RiskResult {
         originalDrug: string;
         suggestion: string;
         reasoning: string;
+        type?: "modern" | "ayurvedic";
     }[];
     recommendations: {
         area: string;
@@ -327,13 +328,43 @@ const MedicationCheck: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2"><Pill/> Suggested Alternatives</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {result.alternatives.map((alt, i) => (
-                        <div key={i} className='p-3 bg-blue-50 rounded-lg border border-blue-200'>
-                            <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider discussing <strong className='font-semibold'>{alt.suggestion}</strong> with your doctor.</p>
-                            <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
+                <CardContent className="space-y-6">
+                    {/* Modern Pharmaceutical Alternatives */}
+                    {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                                <Pill className="h-4 w-4" />
+                                Modern Pharmaceutical Alternatives
+                            </h4>
+                            <div className="space-y-3">
+                                {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').map((alt, i) => (
+                                    <div key={`modern-${i}`} className='p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                                        <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider discussing <strong className='font-semibold'>{alt.suggestion}</strong> with your doctor.</p>
+                                        <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
+                    )}
+
+                    {/* Ayurvedic Alternatives */}
+                    {result.alternatives.filter(alt => alt.type === 'ayurvedic').length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                                <span className="text-lg">🌿</span>
+                                Ayurvedic Alternatives
+                            </h4>
+                            <div className="space-y-3">
+                                {result.alternatives.filter(alt => alt.type === 'ayurvedic').map((alt, i) => (
+                                    <div key={`ayurvedic-${i}`} className='p-3 bg-green-50 rounded-lg border border-green-200'>
+                                        <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider <strong className='font-semibold'>{alt.suggestion}</strong> as an Ayurvedic alternative.</p>
+                                        <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
+                                        <p className='text-xs text-green-700 mt-2 italic'>⚠️ Consult with an Ayurvedic practitioner before using any herbal remedies.</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
           )}
