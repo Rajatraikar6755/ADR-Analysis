@@ -12,11 +12,6 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/v1/chat/completions";
 
-// AI Model Configuration - Using the latest available model
-// Available models: 'openai/gpt-4o', 'openai/gpt-4o-mini', 'anthropic/claude-3-5-sonnet'
-// Note: GPT-5 is not yet publicly available through GitHub AI
-const AI_MODEL = 'openai/gpt-4o'; // Latest stable model for best performance
-
 app.post('/', async (req, res) => {
   try {
     const { message } = req.body;
@@ -34,7 +29,7 @@ app.post('/', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: AI_MODEL,
+        model: 'openai/gpt-4o', // The model you want to use
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },

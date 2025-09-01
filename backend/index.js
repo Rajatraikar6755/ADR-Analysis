@@ -29,11 +29,6 @@ const startServer = async () => {
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/v1/chat/completions";
 
-  // AI Model Configuration - Using the latest available model
-  // Available models: 'openai/gpt-4o', 'openai/gpt-4o-mini', 'anthropic/claude-3-5-sonnet'
-  // Note: GPT-5 is not yet publicly available through GitHub AI
-  const AI_MODEL = 'openai/gpt-4o'; // Latest stable model for best performance
-
   // ROUTE 1: For the AI Assistant Chat
   app.post('/api/ai-assistant', upload.single('image'), async (req, res) => {
     if (!GITHUB_TOKEN) {
@@ -65,7 +60,7 @@ const startServer = async () => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: AI_MODEL,
+          model: 'openai/gpt-4o',
           messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: userContent } ],
         }),
       });
@@ -146,7 +141,7 @@ const startServer = async () => {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: AI_MODEL,
+                model: 'openai/gpt-4o',
                 messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt } ],
                 response_format: { type: "json_object" },
             }),
@@ -166,7 +161,6 @@ const startServer = async () => {
 
   app.listen(port, () => {
     console.log(`✅ Backend server running with all endpoints on http://localhost:${port}`);
-    console.log(`🤖 Using AI Model: ${AI_MODEL}`);
   });
 };
 
