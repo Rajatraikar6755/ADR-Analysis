@@ -16,6 +16,7 @@ import PremiumPlansPage from "./pages/PremiumPlansPage";
 import AssessmentDetailPage from "./pages/AssessmentDetailPage"; 
 import HealthProfilePage from "./pages/HealthProfilePage";
 import FindDoctorPage from "./pages/FindDoctorPage";
+import AppointmentsPage from "./pages/AppointmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/assessment/:id" element={<AssessmentDetailPage />} /> 
             <Route path="/health-profile" element={<HealthProfilePage />} />
             <Route path="/find-doctor" element={<FindDoctorPage />} />
+            <Route path="/appointments" element={<AppointmentsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

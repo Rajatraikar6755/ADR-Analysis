@@ -115,6 +115,23 @@ const PatientDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Book Appointments</CardTitle>
+            <CardDescription>Find and book appointments with specialists</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center flex-col py-6">
+              <Pill className="h-12 w-12 text-healthcare-600 mb-4" />
+              <p className="text-center text-gray-600 mb-4">
+                Search for doctors by specialty and book appointments with real healthcare providers
+              </p>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/find-doctor">Find a Doctor</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -164,38 +181,52 @@ const PatientDashboard: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
-              <Pill className="h-5 w-5 text-gray-400" />
+              <CardTitle className="text-lg">Appointments</CardTitle>
+              <div className="flex items-center gap-2">
+                <Pill className="h-5 w-5 text-gray-400" />
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/appointments">View All</Link>
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            {upcomingAppointments.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="p-4 rounded-lg border border-gray-200">
-                    <p className="font-medium">{appointment.doctor}</p>
-                    <div className="flex items-center text-gray-600 text-sm mt-1">
-                      <span>{new Date(appointment.date).toLocaleDateString()}</span>
-                      <span className="mx-2">•</span>
-                      <span>{appointment.time}</span>
+            {(() => {
+              const savedAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
+              const upcomingAppts = savedAppointments.filter((apt: any) => 
+                new Date(apt.appointmentDate) > new Date() && apt.status === 'confirmed'
+              ).slice(0, 3);
+
+              return upcomingAppts.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingAppts.map((appointment: any) => (
+                    <div key={appointment.id} className="p-4 rounded-lg border border-green-200 bg-green-50">
+                      <p className="font-medium">{appointment.doctorName}</p>
+                      <p className="text-sm text-gray-600">{appointment.doctorSpecialty}</p>
+                      <div className="flex items-center text-gray-600 text-sm mt-1">
+                        <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+                        <span className="mx-2">•</span>
+                        <span>{appointment.appointmentTime}</span>
+                      </div>
+                      <div className="mt-3 flex space-x-2">
+                        <Button asChild variant="outline" size="sm" className="text-xs">
+                          <Link to="/appointments">Manage</Link>
+                        </Button>
+                      </div>
                     </div>
-                    <div className="mt-3 flex space-x-2">
-                      <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
-                      <Button variant="outline" size="sm" className="text-xs">Cancel</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <Activity className="h-12 w-12 text-gray-300 mb-2" />
-                <p className="text-gray-500">No upcoming appointments</p>
-                <p className="text-gray-400 text-sm mb-4">Schedule a consultation with a doctor</p>
-                <Button asChild variant="outline">
-                  <Link to="/find-doctor">Find a Doctor</Link>
-                </Button>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <Activity className="h-12 w-12 text-gray-300 mb-2" />
+                  <p className="text-gray-500">No upcoming appointments</p>
+                  <p className="text-gray-400 text-sm mb-4">Schedule a consultation with a doctor</p>
+                  <Button asChild variant="outline">
+                    <Link to="/find-doctor">Find a Doctor</Link>
+                  </Button>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
