@@ -29,7 +29,7 @@ app.post('/', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o', // The model you want to use
+        model: 'openai/gpt-5', // The model you want to use
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
