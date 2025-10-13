@@ -5,8 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FilePlus, X, Pill, Loader2, HeartPulse, Dumbbell, Stethoscope} from 'lucide-react';
+import { FilePlus, X, Pill, HeartPulse, Dumbbell, Stethoscope} from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { toast } from '@/components/ui/sonner';
+import Reveal from '@/components/ui/Reveal';
+import { motion } from 'framer-motion';
 
 
 interface Medication {
@@ -160,14 +163,20 @@ const MedicationCheck: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Medication Risk Assessment</h1>
+      <Reveal>
+        <h1 className="text-2xl font-bold mb-6 animate-slide-in-up">Medication Risk Assessment</h1>
+      </Reveal>
       
       {!result ? (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
+          <Card className="animate-zoom-in">
             <CardHeader>
-              <CardTitle className="text-lg">Current Medications</CardTitle>
-              <CardDescription>Enter all medications you are currently taking.</CardDescription>
+              <Reveal>
+                <CardTitle className="text-lg animate-slide-in-up">Current Medications</CardTitle>
+              </Reveal>
+              <Reveal delay={0.06}>
+                <CardDescription className="animate-fade-in-up">Enter all medications you are currently taking.</CardDescription>
+              </Reveal>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
@@ -246,10 +255,14 @@ const MedicationCheck: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="animate-zoom-in">
             <CardHeader>
-              <CardTitle className="text-lg">Health Conditions & Documents</CardTitle>
-              <CardDescription>Provide your health history for a more accurate assessment.</CardDescription>
+              <Reveal>
+                <CardTitle className="text-lg animate-slide-in-up">Health Conditions & Documents</CardTitle>
+              </Reveal>
+              <Reveal delay={0.06}>
+                <CardDescription className="animate-fade-in-up">Provide your health history for a more accurate assessment.</CardDescription>
+              </Reveal>
             </CardHeader>
             <CardContent>
                 <Label htmlFor="conditions">List any known health conditions (e.g., Hypertension, Diabetes)</Label>
@@ -286,15 +299,17 @@ const MedicationCheck: React.FC = () => {
 
           <div className="flex justify-end">
             <Button type="submit" className="bg-healthcare-600 hover:bg-healthcare-700" disabled={isAssessing}>
-              {isAssessing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</> : 'Analyze Medications'}
+              {isAssessing ? <><LoadingSpinner /> <span className="ml-2">Analyzing...</span></> : 'Analyze Medications'}
             </Button>
           </div>
         </form>
       ) : (
         <div className="space-y-6">
-          <Card>
+          <Card className="animate-zoom-in">
             <CardHeader>
-              <CardTitle className="text-lg">Assessment Result</CardTitle>
+              <Reveal>
+                <CardTitle className="text-lg animate-slide-in-up">Assessment Result</CardTitle>
+              </Reveal>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className='text-center p-6 bg-gray-50 rounded-lg'>
@@ -308,7 +323,7 @@ const MedicationCheck: React.FC = () => {
             </CardContent>
           </Card>
           {result.recommendedSpecialist && (
-    <Card className="border-blue-200 bg-blue-50">
+    <Card className="border-blue-200 bg-blue-50 animate-slide-in-up">
         <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
                 <Stethoscope className="text-blue-600" />
@@ -324,7 +339,7 @@ const MedicationCheck: React.FC = () => {
     </Card>
 )}
           {result.alternatives && result.alternatives.length > 0 && (
-            <Card>
+            <Card className="animate-zoom-in">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2"><Pill/> Suggested Alternatives</CardTitle>
                 </CardHeader>
@@ -338,10 +353,10 @@ const MedicationCheck: React.FC = () => {
                             </h4>
                             <div className="space-y-3">
                                 {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').map((alt, i) => (
-                                    <div key={`modern-${i}`} className='p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                                    <motion.div key={`modern-${i}`} className='p-3 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
                                         <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider discussing <strong className='font-semibold'>{alt.suggestion}</strong> with your doctor.</p>
                                         <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         </div>
@@ -356,11 +371,11 @@ const MedicationCheck: React.FC = () => {
                             </h4>
                             <div className="space-y-3">
                                 {result.alternatives.filter(alt => alt.type === 'ayurvedic').map((alt, i) => (
-                                    <div key={`ayurvedic-${i}`} className='p-3 bg-green-50 rounded-lg border border-green-200'>
+                                    <motion.div key={`ayurvedic-${i}`} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
                                         <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider <strong className='font-semibold'>{alt.suggestion}</strong> as an Ayurvedic alternative.</p>
                                         <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
                                         <p className='text-xs text-green-700 mt-2 italic'>⚠️ Consult with an Ayurvedic practitioner before using any herbal remedies.</p>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         </div>
@@ -370,26 +385,26 @@ const MedicationCheck: React.FC = () => {
           )}
 
           {result.recommendations && result.recommendations.length > 0 && (
-             <Card>
+             <Card className="animate-zoom-in">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2"><HeartPulse/> Lifestyle Recommendations</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {result.recommendations.map((rec, i) => (
-                        <div key={i} className='p-3 bg-green-50 rounded-lg border border-green-200'>
+                        <motion.div key={i} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
                             <p className='font-semibold flex items-center gap-2'>{rec.area === 'Exercise' && <Dumbbell className='h-4 w-4'/>} {rec.area}</p>
                             <p className='text-sm text-gray-600 mt-1'>{rec.advice}</p>
-                        </div>
+                        </motion.div>
                     ))}
                 </CardContent>
             </Card>
           )}
 
           <div className="flex justify-between">
-            <Button onClick={resetAssessment} variant="outline">
+            <Button onClick={resetAssessment} variant="outline" className="animate-slide-in-right">
               New Assessment
             </Button>
-            <Button onClick={handleSaveReport} className="bg-healthcare-600 hover:bg-healthcare-700">
+            <Button onClick={handleSaveReport} className="bg-gradient-accent text-white hover:opacity-90">
               Save Report
             </Button>
           </div>

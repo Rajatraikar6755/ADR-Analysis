@@ -88,7 +88,7 @@ const startServer = async () => {
 
         let fdaData = '';
         for (const med of medications) {
-            const events = await getAdverseEvents(med.name); // This will now work correctly
+            const events = await getAdverseEvents(med.name); 
             if (events.length > 0) {
                 fdaData += `\n- Top 5 reported adverse events for ${med.name} (from FAERS): ${events.join(', ')}.`;
             }

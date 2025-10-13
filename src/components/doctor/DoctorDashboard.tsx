@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -124,6 +125,7 @@ const DoctorDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="bg-danger-50 border-danger-200">
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -135,7 +137,9 @@ const DoctorDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
         
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -147,7 +151,9 @@ const DoctorDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
         
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -159,6 +165,7 @@ const DoctorDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
       </div>
 
       <Tabs defaultValue="patients">
@@ -168,6 +175,7 @@ const DoctorDashboard: React.FC = () => {
         </TabsList>
         
         <TabsContent value="patients">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -274,9 +282,11 @@ const DoctorDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
         
         <TabsContent value="appointments">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
@@ -310,6 +320,7 @@ const DoctorDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Shield, Microscope, Book, Stethoscope, AlertTriangle, FilePlus } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import Reveal from '@/components/ui/Reveal';
 
 const features = [
   {
@@ -48,27 +50,73 @@ const features = [
 ];
 
 const FeaturesSection: React.FC = () => {
-  return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Comprehensive Health Features</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Our platform combines advanced AI technology with medical expertise to provide you with a complete health management solution.
-          </p>
-        </div>
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: 'easeOut',
+      },
+    },
+  };
+
+  return (
+    <section className="py-16 bg-white" ref={ref}>
+      <div className="container mx-auto px-4">
+        <motion.div 
+          className="text-center mb-12"
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={itemVariants}
+        >
+          <Reveal>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4 animate-slide-in-up">Comprehensive Health Features</h2>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-fade-in-up">
+              Our platform combines advanced AI technology with medical expertise to provide you with a complete health management solution.
+            </p>
+          </Reveal>
+        </motion.div>
+
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={containerVariants}
+        >
           {features.map((feature, index) => (
-            <div key={index} className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-100">
-              <div className={`${feature.bgColor} p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4`}>
-                <feature.icon className={`h-7 w-7 ${feature.color}`} />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
-            </div>
+            <motion.div 
+              key={index} 
+              className="bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-all border border-gray-100 animate-zoom-in"
+              variants={itemVariants}
+              whileHover={{ y: -6, scale: 1.02 }}
+            >
+              <Reveal delay={index * 0.05}>
+                <div className={`${feature.bgColor} p-3 rounded-full w-14 h-14 flex items-center justify-center mb-4 animate-rotate-in`}>
+                  <feature.icon className={`h-7 w-7 ${feature.color}`} />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </Reveal>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

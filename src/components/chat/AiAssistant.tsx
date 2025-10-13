@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Reveal from '@/components/ui/Reveal';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -126,8 +128,12 @@ const AiAssistant: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">AI Health Assistant</h1>
-        <p className="text-gray-600">Ask questions, upload images, or get general wellness advice</p>
+        <Reveal>
+          <h1 className="text-2xl font-bold animate-slide-in-up">AI Health Assistant</h1>
+        </Reveal>
+        <Reveal delay={0.06}>
+          <p className="text-gray-600 animate-fade-in-up">Ask questions, upload images, or get general wellness advice</p>
+        </Reveal>
       </div>
       
       <Alert className="mb-6">
@@ -138,22 +144,27 @@ const AiAssistant: React.FC = () => {
         </AlertDescription>
       </Alert>
 
-      <Card className="border-healthcare-100">
+      <Card className="border-healthcare-100 animate-zoom-in">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <Bot className="h-5 w-5 mr-2 text-healthcare-600" />
-            Health Assistant
-          </CardTitle>
+          <Reveal>
+            <CardTitle className="text-lg flex items-center animate-slide-in-up">
+              <Bot className="h-5 w-5 mr-2 text-healthcare-600" />
+              Health Assistant
+            </CardTitle>
+          </Reveal>
           <CardDescription>
             Your conversation is private and secure
           </CardDescription>
         </CardHeader>
         <CardContent className="h-[400px] overflow-y-auto p-4">
           <div className="space-y-4">
-            {messages.map((message) => (
-              <div
+            {messages.map((message, idx) => (
+              <motion.div
                 key={message.id}
                 className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.02 * idx }}
               >
                 {message.sender === 'assistant' && <Bot className="h-6 w-6 text-healthcare-600 flex-shrink-0" />}
                 <div
@@ -172,7 +183,7 @@ const AiAssistant: React.FC = () => {
                   </p>
                 </div>
                 {message.sender === 'user' && <User className="h-6 w-6 bg-gray-200 p-1 rounded-full flex-shrink-0" />}
-              </div>
+              </motion.div>
             ))}
             {isLoading && (
               <div className="flex justify-start">

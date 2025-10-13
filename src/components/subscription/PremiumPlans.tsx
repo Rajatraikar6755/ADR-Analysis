@@ -1,5 +1,7 @@
 
 import React from 'react';
+import Reveal from '@/components/ui/Reveal';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, X, Stethoscope, MessageSquare, AlertTriangle, Clock, Upload, Heart } from 'lucide-react';
@@ -69,17 +71,23 @@ const PremiumPlans: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <Heart className="h-10 w-10 text-healthcare-600 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Premium Doctor Support</h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Upgrade to get personalized healthcare advice and live consultations with medical professionals
-        </p>
+        <Reveal>
+          <Heart className="h-10 w-10 text-healthcare-600 mx-auto mb-4 animate-zoom-in" />
+        </Reveal>
+        <Reveal delay={0.05}>
+          <h1 className="text-3xl font-bold mb-2 animate-slide-in-up">Premium Doctor Support</h1>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto animate-fade-in-up">
+            Upgrade to get personalized healthcare advice and live consultations with medical professionals
+          </p>
+        </Reveal>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan, index) => (
+          <motion.div key={index} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5, delay: 0.06 * index }}>
           <Card 
-            key={index} 
             className={`flex flex-col ${
               plan.recommended 
                 ? 'border-healthcare-500 shadow-lg relative overflow-hidden' 
@@ -127,7 +135,7 @@ const PremiumPlans: React.FC = () => {
                   plan.name === 'Free' 
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     : plan.recommended 
-                      ? 'bg-healthcare-600 hover:bg-healthcare-700' 
+                      ? 'bg-gradient-accent text-white hover:opacity-90' 
                       : 'bg-healthcare-500 hover:bg-healthcare-600'
                 }`}
                 variant={plan.name === 'Free' ? 'outline' : 'default'}
@@ -136,6 +144,7 @@ const PremiumPlans: React.FC = () => {
               </Button>
             </CardFooter>
           </Card>
+          </motion.div>
         ))}
       </div>
 
@@ -176,11 +185,13 @@ const PremiumPlans: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 text-center mt-8">
-          <h3 className="text-lg font-semibold mb-2">Need a Custom Plan?</h3>
-          <p className="text-gray-600 mb-4">We offer tailored solutions for healthcare providers and organizations</p>
-          <Button variant="outline">Contact for Enterprise Options</Button>
-        </div>
+        <Reveal>
+          <div className="bg-gray-50 p-6 rounded-lg border border-gray-100 text-center mt-8 animate-slide-in-up">
+            <h3 className="text-lg font-semibold mb-2">Need a Custom Plan?</h3>
+            <p className="text-gray-600 mb-4">We offer tailored solutions for healthcare providers and organizations</p>
+            <Button variant="outline">Contact for Enterprise Options</Button>
+          </div>
+        </Reveal>
       </div>
     </div>
   );

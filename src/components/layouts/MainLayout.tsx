@@ -27,7 +27,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm py-4 px-6 border-b">
+      <header className="bg-white/20 backdrop-blur-lg shadow-lg py-4 px-6 border-b border-white/30 sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="text-2xl font-bold text-healthcare-700 flex items-center gap-2">
             <Heart className="h-6 w-6 text-healthcare-600" />

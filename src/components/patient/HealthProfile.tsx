@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Reveal from '@/components/ui/Reveal';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -91,15 +93,21 @@ const HealthProfile: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Health Profile</h1>
-        <Button onClick={handleSaveProfile} className="bg-healthcare-600 hover:bg-healthcare-700">
-          <Save className="mr-2 h-4 w-4" /> Save Changes
-        </Button>
+        <Reveal>
+          <h1 className="text-2xl font-bold animate-slide-in-up">Health Profile</h1>
+        </Reveal>
+        <Reveal delay={0.06}>
+          <Button onClick={handleSaveProfile} className="bg-gradient-accent text-white hover:opacity-90 animate-zoom-in">
+            <Save className="mr-2 h-4 w-4" /> Save Changes
+          </Button>
+        </Reveal>
       </div>
 
-      <Card>
+      <Card className="animate-zoom-in">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><User /> Personal Information</CardTitle>
+          <Reveal>
+            <CardTitle className="flex items-center gap-2 animate-slide-in-up"><User /> Personal Information</CardTitle>
+          </Reveal>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -136,9 +144,11 @@ const HealthProfile: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="animate-zoom-in">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><HeartPulse /> Medical Information</CardTitle>
+          <Reveal>
+            <CardTitle className="flex items-center gap-2 animate-slide-in-up"><HeartPulse /> Medical Information</CardTitle>
+          </Reveal>
         </CardHeader>
         <CardContent className="space-y-4">
             <div>
@@ -152,9 +162,11 @@ const HealthProfile: React.FC = () => {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="animate-zoom-in">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Phone /> Emergency Contact</CardTitle>
+          <Reveal>
+            <CardTitle className="flex items-center gap-2 animate-slide-in-up"><Phone /> Emergency Contact</CardTitle>
+          </Reveal>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -168,13 +180,17 @@ const HealthProfile: React.FC = () => {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="animate-zoom-in">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileText /> Medical Documents</CardTitle>
-          <CardDescription>Upload and manage your prescriptions, lab results, etc.</CardDescription>
+          <Reveal>
+            <CardTitle className="flex items-center gap-2 animate-slide-in-up"><FileText /> Medical Documents</CardTitle>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <CardDescription className="animate-fade-in-up">Upload and manage your prescriptions, lab results, etc.</CardDescription>
+          </Reveal>
         </CardHeader>
         <CardContent>
-          <div className="border-2 border-dashed rounded-lg p-6 text-center mb-4">
+          <div className="border-2 border-dashed rounded-lg p-6 text-center mb-4 animate-slide-in-up">
               <Input id="doc-upload" type="file" className="hidden" onChange={handleFileUpload} />
               <Label htmlFor="doc-upload" className="cursor-pointer flex flex-col items-center justify-center">
                   <FileUp className="h-10 w-10 text-gray-400 mb-2" />
@@ -182,8 +198,8 @@ const HealthProfile: React.FC = () => {
               </Label>
           </div>
           <div className="space-y-2">
-            {documents.length > 0 ? documents.map(doc => (
-              <div key={doc.name} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+            {documents.length > 0 ? documents.map((doc, idx) => (
+              <motion.div key={doc.name} className="flex items-center justify-between p-2 bg-gray-50 rounded border hover:shadow-sm transition-shadow" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.04 * idx }}>
                 <div>
                   <p className="font-medium">{doc.name}</p>
                   <p className="text-xs text-gray-500">
@@ -193,7 +209,7 @@ const HealthProfile: React.FC = () => {
                 <Button variant="ghost" size="icon" onClick={() => deleteDocument(doc.name)}>
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
-              </div>
+              </motion.div>
             )) : <p className="text-sm text-center text-gray-500">No documents uploaded.</p>}
           </div>
         </CardContent>

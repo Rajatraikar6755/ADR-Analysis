@@ -7,10 +7,9 @@ const initialize = async () => {
     }
 };
 
-// THIS IS THE FIX: Using your valid API key from the email
 const FDA_API_KEY = 'ij3zdFNXiLSTpzYTafg25uz7xEyzsWXbSLxQaggZ';
 
-// Common drug name mappings for international drugs
+
 const DRUG_NAME_MAPPINGS = {
     'paracetamol': 'acetaminophen',
     'acetaminophen': 'acetaminophen',
@@ -30,7 +29,7 @@ const DRUG_NAME_MAPPINGS = {
     'zithromax': 'azithromycin'
 };
 
-// Fallback adverse events for common drugs when FDA API doesn't find them
+
 const FALLBACK_ADVERSE_EVENTS = {
     'paracetamol': ['NAUSEA', 'LIVER INJURY', 'ALLERGIC REACTION', 'RASH', 'HEADACHE'],
     'acetaminophen': ['NAUSEA', 'LIVER INJURY', 'ALLERGIC REACTION', 'RASH', 'HEADACHE'],
@@ -44,17 +43,13 @@ const FALLBACK_ADVERSE_EVENTS = {
     'azithromycin': ['NAUSEA', 'DIARRHEA', 'STOMACH PAIN', 'HEADACHE', 'DIZZINESS']
 };
 
-/**
- * Normalizes drug names to improve FDA API search success
- */
+
 function normalizeDrugName(drugName) {
     const normalized = drugName.toLowerCase().trim();
     return DRUG_NAME_MAPPINGS[normalized] || drugName;
 }
 
-/**
- * Gets fallback adverse events for a drug
- */
+
 function getFallbackAdverseEvents(drugName) {
     const normalized = drugName.toLowerCase().trim();
     return FALLBACK_ADVERSE_EVENTS[normalized] || [];

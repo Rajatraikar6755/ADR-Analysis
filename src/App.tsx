@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -16,9 +17,78 @@ import PremiumPlansPage from "./pages/PremiumPlansPage";
 import AssessmentDetailPage from "./pages/AssessmentDetailPage"; 
 import HealthProfilePage from "./pages/HealthProfilePage";
 import FindDoctorPage from "./pages/FindDoctorPage";
-import AppointmentsPage from "./pages/AppointmentsPage";
 
 const queryClient = new QueryClient();
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
+            <Index />
+          </motion.div>
+        } />
+        <Route path="/login" element={
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+            <LoginPage />
+          </motion.div>
+        } />
+        <Route path="/register" element={
+          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.4 }}>
+            <RegisterPage />
+          </motion.div>
+        } />
+        <Route path="/patient-dashboard" element={
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.45 }}>
+            <PatientDashboardPage />
+          </motion.div>
+        } />
+        <Route path="/doctor-dashboard" element={
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.45 }}>
+            <DoctorDashboardPage />
+          </motion.div>
+        } />
+        <Route path="/medication-check" element={
+          <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.4 }}>
+            <MedicationCheckPage />
+          </motion.div>
+        } />
+        <Route path="/ai-assistant" element={
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+            <AiAssistantPage />
+          </motion.div>
+        } />
+        <Route path="/premium-plans" element={
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.45 }}>
+            <PremiumPlansPage />
+          </motion.div>
+        } />
+        <Route path="/assessment/:id" element={
+          <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.4 }}>
+            <AssessmentDetailPage />
+          </motion.div>
+        } />
+        <Route path="/health-profile" element={
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+            <HealthProfilePage />
+          </motion.div>
+        } />
+        <Route path="/find-doctor" element={
+          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.4 }}>
+            <FindDoctorPage />
+          </motion.div>
+        } />
+        <Route path="*" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            <NotFound />
+          </motion.div>
+        } />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,21 +97,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/patient-dashboard" element={<PatientDashboardPage />} />
-            <Route path="/doctor-dashboard" element={<DoctorDashboardPage />} />
-            <Route path="/medication-check" element={<MedicationCheckPage />} />
-            <Route path="/ai-assistant" element={<AiAssistantPage />} />
-            <Route path="/premium-plans" element={<PremiumPlansPage />} />
-            <Route path="/assessment/:id" element={<AssessmentDetailPage />} /> 
-            <Route path="/health-profile" element={<HealthProfilePage />} />
-            <Route path="/find-doctor" element={<FindDoctorPage />} />
-            <Route path="/appointments" element={<AppointmentsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

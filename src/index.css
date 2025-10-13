@@ -16,8 +16,10 @@
     --primary: 205 92% 45%; /* A brighter, more modern blue */
     --primary-foreground: 210 40% 98%;
 
-    --primary-gradient-start: 180 70% 45%; /* Teal */
-    --primary-gradient-end: 210 90% 50%; /* Vibrant Blue */
+    --primary-gradient-start: 180 80% 45%; /* Teal */
+    --primary-gradient-end: 265 90% 55%; /* Indigo/Violet pop */
+    --accent-gradient-start: 200 98% 55%;
+    --accent-gradient-end: 160 92% 45%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -25,8 +27,8 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 205 92% 45%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -66,8 +68,8 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 199 100% 41%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
