@@ -1,13 +1,12 @@
-
 import React from 'react';
 import RegisterForm from '@/components/auth/RegisterForm';
-import MainLayout from '@/components/layouts/MainLayout';
+import DynamicBackground from '@/components/ui/DynamicBackground';
 
 const RegisterPage: React.FC = () => {
   return (
-    <MainLayout>
+    <DynamicBackground variant="login">
       <RegisterForm />
-    </MainLayout>
+    </DynamicBackground>
   );
 };
 

@@ -191,6 +191,72 @@ const startServer = async () => {
     }
   });
 
+// ROUTE 3: For Finding Nearby Doctors (UPDATED AND FINAL)
+app.get('/api/nearby-doctors', async (req, res) => {
+    const { lat, lon, radius = '5000' } = req.query;
+    const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY;
+
+    if (!GOOGLE_MAPS_KEY) {
+        return res.status(500).json({ error: 'Google Maps API key is not configured.' });
+    }
+    if (!lat || !lon) {
+        return res.status(400).json({ error: 'Latitude and longitude are required.' });
+    }
+
+    // --- NEW, BROADER SEARCH QUERY ---
+    // Instead of a strict 'type', we use a more powerful 'keyword' search.
+    // This finds places that mention "doctor", "clinic", or "hospital".
+    const keyword = "doctor OR clinic OR hospital";
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_KEY}`;
+
+    try {
+        console.log(`Fetching from Google Places API: ${url}`); // Log the URL we are calling
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // --- THE MOST IMPORTANT DEBUGGING STEP ---
+        // Log the entire response from Google to the terminal.
+        console.log("--- RAW GOOGLE API RESPONSE ---");
+        console.log(JSON.stringify(data, null, 2));
+        console.log("-----------------------------");
+
+        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+            throw new Error(data.error_message || `Google API returned status: ${data.status}`);
+        }
+
+        if (!data.results || data.results.length === 0) {
+            return res.status(200).json([]); // Send an empty array if no results
+        }
+
+        // We need to make a second call for each doctor to get contact details
+        const doctorDetailsPromises = data.results.map(async (place) => {
+            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,website,opening_hours,types,vicinity&key=${GOOGLE_MAPS_KEY}`;
+            const detailsResponse = await fetch(detailsUrl);
+            const detailsData = await detailsResponse.json();
+            
+            if (!detailsData.result) return null; // Skip if details fetching fails
+
+            return {
+                id: place.place_id,
+                name: detailsData.result.name,
+                address: detailsData.result.vicinity, // Added address
+                phone: detailsData.result.formatted_phone_number || 'Not available',
+                website: detailsData.result.website || 'Not available',
+                specialties: detailsData.result.types.filter(t => t !== 'health' && t !== 'point_of_interest' && t !== 'establishment'),
+                isOpen: detailsData.result.opening_hours ? detailsData.result.opening_hours.open_now : 'Unknown',
+            };
+        });
+
+        const doctors = (await Promise.all(doctorDetailsPromises)).filter(Boolean); // Filter out any null results
+
+        res.status(200).json(doctors);
+
+    } catch (error) {
+        console.error('CRITICAL ERROR in /api/nearby-doctors:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
   app.listen(port, () => {
     console.log(`✅ Backend server running with all endpoints on http://localhost:${port}`);
   });

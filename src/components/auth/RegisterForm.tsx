@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Heart, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { motion } from 'framer-motion';
 
 const RegisterForm: React.FC = () => {
   const [name, setName] = useState('');
@@ -36,14 +36,16 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-200px)] py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-2">
-            <Heart className="h-10 w-10 text-healthcare-600" />
-          </div>
-          <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-          <CardDescription className="text-center">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      <Card className="w-full max-w-[700px] bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/30 text-black">
+        <CardHeader className="space-y-1 text-center">
+          <Heart className="h-12 w-12 text-vibrantBlue mx-auto drop-shadow-lg" />
+          <CardTitle className="text-3xl text-vibrantBlue font-bold drop-shadow-md">Create an Account</CardTitle>
+          <CardDescription className="text-black/80">
             Enter your details to create your account
           </CardDescription>
         </CardHeader>
@@ -57,6 +59,7 @@ const RegisterForm: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
             
@@ -69,6 +72,7 @@ const RegisterForm: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
             
@@ -81,6 +85,7 @@ const RegisterForm: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
             
@@ -93,53 +98,47 @@ const RegisterForm: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
             
             {passwordError && (
-              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">{passwordError}</div>
+              <div className="text-sm text-red-300 bg-red-900/50 p-2 rounded">{passwordError}</div>
             )}
 
             <div className="space-y-2">
               <Label>I am a</Label>
-              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'patient' | 'doctor')} className="flex gap-4">
+              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'patient' | 'doctor')} className="flex gap-4 pt-2">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="patient" id="patient" />
+                  <RadioGroupItem value="patient" id="patient" className="border-white text-vibrantBlue-light focus:ring-vibrantBlue" />
                   <Label htmlFor="patient" className="cursor-pointer">Patient</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="doctor" id="doctor" />
+                  <RadioGroupItem value="doctor" id="doctor" className="border-white text-vibrantBlue-light focus:ring-vibrantBlue" />
                   <Label htmlFor="doctor" className="cursor-pointer">Healthcare Professional</Label>
                 </div>
               </RadioGroup>
             </div>
 
             {error && (
-              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</div>
+              <div className="text-sm text-red-300 bg-red-900/50 p-2 rounded">{error}</div>
             )}
 
-            <Button type="submit" className="w-full bg-healthcare-600 hover:bg-healthcare-700" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Register'
-              )}
+            <Button type="submit" className="w-full bg-gradient-to-r from-vibrantBlue-light to-vibrantBlue text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-shadow" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</> : 'Register'}
             </Button>
           </form>
         </CardContent>
         <CardFooter>
-          <p className="text-sm text-center text-gray-600 w-full">
+          <p className="text-sm text-center text-white/80 w-full">
             Already have an account?{" "}
-            <Link to="/login" className="text-healthcare-600 hover:underline">
+            <Link to="/login" className="text-vibrantBlue-light font-bold hover:underline">
               Login
             </Link>
           </p>
         </CardFooter>
       </Card>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,13 +1,12 @@
-
 import React from 'react';
 import LoginForm from '@/components/auth/LoginForm';
-import MainLayout from '@/components/layouts/MainLayout';
+import DynamicBackground from '@/components/ui/DynamicBackground';
 
 const LoginPage: React.FC = () => {
   return (
-    <MainLayout>
+    <DynamicBackground variant="login">
       <LoginForm />
-    </MainLayout>
+    </DynamicBackground>
   );
 };
 

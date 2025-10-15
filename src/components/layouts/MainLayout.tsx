@@ -13,12 +13,13 @@ import {
   FileText,
   Home
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
+// interface MainLayoutProps {
+//   children: React.ReactNode;
+// }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
 
   const isPatient = user?.role === 'patient';
@@ -26,8 +27,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {user && (
+        <motion.div
+          className="absolute inset-0 z-0 overflow-hidden" // Ensure it's behind everything (z-0)
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+        >
+          <div className="absolute w-72 h-72 rounded-full bg-healthcare-200/50 opacity-30 blur-2xl -top-20 -left-20 animate-sparkle-float-slow"></div>
+          <div className="absolute w-96 h-96 rounded-full bg-healthcare-100/50 opacity-25 blur-2xl -bottom-24 -right-24 animate-sparkle-float-medium"></div>
+          <div className="absolute w-56 h-56 rounded-full bg-accent-200/50 opacity-20 blur-2xl top-1/3 left-1/4 animate-sparkle-float-fast"></div>
+        </motion.div>
+      )}
       {/* Header */}
-      <header className="bg-white/20 backdrop-blur-lg shadow-lg py-4 px-6 border-b border-white/30 sticky top-0 z-50">
+      <header className="bg-white/60 backdrop-blur-lg shadow-sm py-4 px-6 border-b border-white/30 sticky top-0 z-20">
         <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="text-2xl font-bold text-healthcare-700 flex items-center gap-2">
             <Heart className="h-6 w-6 text-healthcare-600" />
@@ -60,9 +73,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       {/* Main content with sidebar for authenticated users */}
       {user ? (
-        <div className="flex flex-1">
+        <div className="flex flex-1 z-10 bg-gray-50/50 relative overflow-hidden">
+        
           {/* Sidebar */}
-          <aside className="w-64 bg-slate-50 border-r shadow-sm hidden md:block">
+          <aside className="w-64 bg-white/40 backdrop-blur-lg border-r border-white/30 shadow-sm hidden md:block">
             <nav className="p-4 space-y-1">
               {isPatient && (
                 <>
@@ -117,11 +131,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               )}
 
               <Link 
-  to="/find-doctor" 
-  className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
-  <Calendar className="h-5 w-5" />
-  <span>Book Appointment</span>
-</Link>
+                 to="/find-doctor" 
+                 className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
+                  <Calendar className="h-5 w-5" />
+                  <span>Book Appointment</span>
+              </Link>
             </nav>
           </aside>
 
@@ -170,7 +184,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
 
       {/* Footer */}
-      <footer className="py-4 px-6 border-t mt-auto">
+      <footer className="py-4 px-6 border-t border-white/30 mt-auto z-10 bg-white/40 backdrop-blur-lg">
         <div className="container mx-auto text-center text-sm text-gray-500">
           <p>© {new Date().getFullYear()} ADR-Analysis. All rights reserved.</p>
         </div>

@@ -84,6 +84,8 @@ export default {
 					"700": "#0068b4",
 					"800": "#005994",
 					"900": "#084c79",
+					gradientBlueStart: '#b0e0e6', // Light blue
+                    gradientBlueEnd: '#87ceeb',   // Sky blue
 				},
 				danger: {
 					"50": "#fef2f2",
@@ -120,7 +122,12 @@ export default {
 					"700": "#047857",
 					"800": "#065f46",
 					"900": "#064e3b",
-				}
+				},
+				vibrantBlue: {
+          light: '#6DD5ED',
+          DEFAULT: '#2196F3',
+          dark: '#1976D2',
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -130,6 +137,8 @@ export default {
 			 backgroundImage: {
         'gradient-primary': 'linear-gradient(to right, hsl(var(--primary-gradient-start)), hsl(var(--primary-gradient-end)))',
         'gradient-accent': 'linear-gradient(to right, hsl(var(--accent-gradient-start)), hsl(var(--accent-gradient-end)))',
+		'gradient-login': 'linear-gradient(to bottom right, var(--gradientBlueStart), var(--gradientBlueEnd))',
+		'body-gradient': 'linear-gradient(to bottom right, #e0f2fe, #bae6fd)',
       },
 			keyframes: {
         'slide-in-up': {
@@ -168,6 +177,17 @@ export default {
           '0%, 100%': { transform: 'scale(1)', opacity: '1' },
           '50%': { transform: 'scale(1.05)', opacity: '0.7' },
         },
+		'sparkle-float': {
+          '0%': { transform: 'translateY(0px) translateX(0px) scale(1)', opacity: '0.8' },
+          '25%': { transform: 'translateY(-10px) translateX(5px) scale(1.05)', opacity: '0.9' },
+          '50%': { transform: 'translateY(-20px) translateX(0px) scale(1.1)', opacity: '1' },
+          '75%': { transform: 'translateY(-10px) translateX(-5px) scale(1.05)', opacity: '0.9' },
+          '100%': { transform: 'translateY(0px) translateX(0px) scale(1)', opacity: '0.8' },
+        },
+        'wave-background': { // For subtle wave effect in other pages
+          '0%': { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '100% 50%' },
+        },
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -202,6 +222,10 @@ export default {
         'slide-in-right': 'slide-in-right 0.6s ease-out both',
         'zoom-in': 'zoom-in 0.4s ease-out both',
         'rotate-in': 'rotate-in 0.4s ease-out both',
+		'sparkle-float-slow': 'sparkle-float 10s ease-in-out infinite alternate',
+        'sparkle-float-medium': 'sparkle-float 8s ease-in-out infinite alternate-reverse',
+        'sparkle-float-fast': 'sparkle-float 6s ease-in-out infinite alternate',
+        'wave-background': 'wave-background 30s ease-in-out infinite alternate',
 			},
       video: {
         'background': 'url("/background-video.mp4")'

@@ -65,64 +65,93 @@ const PatientDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">AI Risk Assessment</CardTitle>
-            <CardDescription>Check medications for adverse reactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center flex-col py-6">
-              <AlertTriangle className="h-12 w-12 text-healthcare-600 mb-4" />
-              <p className="text-center text-gray-600 mb-4">
-                Analyze your medications for potential risks and get personalized recommendations
-              </p>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/medication-check">Start Assessment</Link>
-              </Button>
+    {/* Card 1: AI Risk Assessment */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Card className="relative overflow-hidden h-full flex flex-col">
+            <img 
+                src="/bg-risk-asses.png" 
+                alt="AI Risk Assessment" 
+                className="absolute inset-0 w-full h-full object-cover z-0 opacity-200" 
+            />
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-10"></div>
+            <div className="relative z-20 flex flex-col h-full">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">AI Risk Assessment</CardTitle>
+                    <CardDescription className='text-white'>Check medications for adverse reactions</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col justify-center">
+                    <div className="flex items-center justify-center flex-col py-6">
+                        <AlertTriangle className="h-12 w-12 text-healthcare-600 mb-4" />
+                        <p className="text-center text-black mb-4">
+                            Analyze your medications for potential risks and get personalized recommendations
+                        </p>
+                        <Button asChild variant="outline" className="w-full bg-white/50 hover:bg-white/70">
+                            <Link to="/medication-check">Start Assessment</Link>
+                        </Button>
+                    </div>
+                </CardContent>
             </div>
-          </CardContent>
         </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Health Assistant</CardTitle>
-            <CardDescription>Get answers to your health questions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center flex-col py-6">
-              <MessageSquare className="h-12 w-12 text-healthcare-600 mb-4" />
-              <p className="text-center text-gray-600 mb-4">
-                Chat with our AI assistant about symptoms, medications, or general health inquiries
-              </p>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/ai-assistant">Ask Assistant</Link>
-              </Button>
+    </motion.div>
+
+    {/* Card 2: Health Assistant */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+        <Card className="relative overflow-hidden h-full flex flex-col">
+            <img 
+                src="/bg-ai-asis.png" 
+                alt="Health Assistant" 
+                className="absolute inset-0 w-full h-full object-cover z-0 opacity-200" 
+            />
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-10"></div>
+            <div className="relative z-20 flex flex-col h-full">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Health Assistant</CardTitle>
+                    <CardDescription className='text-black'>Get answers to your health questions</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col justify-center">
+                    <div className="flex items-center justify-center flex-col py-6">
+                        <MessageSquare className="h-12 w-12 text-healthcare-600 mb-4" />
+                        <p className="text-center text-black-600 mb-4">
+                            Chat with our AI assistant about symptoms, medications, or general health inquiries
+                        </p>
+                        <Button asChild variant="outline" className="w-full bg-white/50 hover:bg-white/70">
+                            <Link to="/ai-assistant">Ask Assistant</Link>
+                        </Button>
+                    </div>
+                </CardContent>
             </div>
-          </CardContent>
         </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Health Records</CardTitle>
-            <CardDescription>Upload and manage your health data</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center flex-col py-6">
-              <FilePlus className="h-12 w-12 text-healthcare-600 mb-4" />
-              <p className="text-center text-gray-600 mb-4">
-                Upload medical reports for analysis or update your health profile
-              </p>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/health-profile">Manage Records</Link>
-              </Button>
+    </motion.div>
+
+    {/* Card 3: Health Records */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
+        <Card className="relative overflow-hidden h-full flex flex-col">
+            <img 
+                src="/bg-health-record.png" 
+                alt="Health Records" 
+                className="absolute inset-0 w-full h-full object-cover z-0 opacity-200" 
+            />
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm z-10"></div>
+            <div className="relative z-20 flex flex-col h-full">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Health Records</CardTitle>
+                    <CardDescription className='text-white'>Upload and manage your health data</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col justify-center">
+                    <div className="flex items-center justify-center flex-col py-6">
+                        <FilePlus className="h-12 w-12 text-healthcare-600 mb-4" />
+                        <p className="text-center text-black-600 mb-4">
+                            Upload medical reports for analysis or update your health profile
+                        </p>
+                        <Button asChild variant="outline" className="w-full bg-white/50 hover:bg-white/70">
+                            <Link to="/health-profile">Manage Records</Link>
+                        </Button>
+                    </div>
+                </CardContent>
             </div>
-          </CardContent>
         </Card>
-        </motion.div>
-      </div>
+    </motion.div>
+</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>

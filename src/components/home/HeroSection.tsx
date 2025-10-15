@@ -103,7 +103,7 @@ const HeroSection: React.FC = () => {
             <MotionDiv variants={itemVariants} className="md:w-1/2 mt-8 md:mt-0">
               <Reveal direction='right'>
                 <div className="relative rounded-xl overflow-hidden shadow-2xl animate-zoom-in">
-                  <div className="bg-white p-8 rounded-xl border-2 border-healthcare-100">
+                  <div >
                     {/* ... Card content remains the same */}
                   </div>
                 </div>
