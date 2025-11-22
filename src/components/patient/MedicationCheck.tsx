@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FilePlus, X, Pill, HeartPulse, Dumbbell, Stethoscope} from 'lucide-react';
+import { FilePlus, X, Pill, HeartPulse, Dumbbell, Stethoscope } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { toast } from '@/components/ui/sonner';
 import Reveal from '@/components/ui/Reveal';
@@ -20,19 +20,19 @@ interface Medication {
 }
 
 interface RiskResult {
-    riskPercentage: number;
-    summary: string;
-    recommendedSpecialist: string;
-    alternatives: {
-        originalDrug: string;
-        suggestion: string;
-        reasoning: string;
-        type?: "modern" | "ayurvedic";
-    }[];
-    recommendations: {
-        area: string;
-        advice: string;
-    }[];
+  riskPercentage: number;
+  summary: string;
+  recommendedSpecialist: string;
+  alternatives: {
+    originalDrug: string;
+    suggestion: string;
+    reasoning: string;
+    type?: "modern" | "ayurvedic";
+  }[];
+  recommendations: {
+    area: string;
+    advice: string;
+  }[];
 }
 
 const MedicationCheck: React.FC = () => {
@@ -43,7 +43,7 @@ const MedicationCheck: React.FC = () => {
   const [currentFrequency, setCurrentFrequency] = useState('');
   const [medicalConditions, setMedicalConditions] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  
+
   const [isAssessing, setIsAssessing] = useState(false);
   const [result, setResult] = useState<RiskResult | null>(null);
 
@@ -117,13 +117,18 @@ const MedicationCheck: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
+
       const response = await fetch("http://localhost:3001/api/assess-risk", {
-          method: 'POST',
-          body: formData,
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: formData,
       });
       if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Assessment failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Assessment failed');
       }
       const assessmentResult = await response.json();
       setResult(assessmentResult);
@@ -133,14 +138,14 @@ const MedicationCheck: React.FC = () => {
       setIsAssessing(false);
     }
   };
-  
+
   const handleSaveReport = () => {
     if (!result) return;
     const fullAssessments = JSON.parse(localStorage.getItem('adr-assessments-full') || '[]');
     const newFullAssessment = { ...result, id: Date.now().toString(), date: new Date().toISOString(), medications: medications, };
     fullAssessments.unshift(newFullAssessment);
     localStorage.setItem('adr-assessments-full', JSON.stringify(fullAssessments));
-    
+
     const summaryAssessments = JSON.parse(localStorage.getItem('adr-assessments') || '[]');
     const newSummary = { id: newFullAssessment.id, date: newFullAssessment.date, medications: medications.map(m => ({ name: m.name })), riskPercentage: result.riskPercentage, };
     summaryAssessments.unshift(newSummary);
@@ -154,11 +159,11 @@ const MedicationCheck: React.FC = () => {
     setMedicalConditions('');
     setFile(null);
   };
-  
+
   const getRiskColor = (percentage: number) => {
-      if (percentage >= 70) return 'text-red-600';
-      if (percentage >= 40) return 'text-yellow-600';
-      return 'text-green-600';
+    if (percentage >= 70) return 'text-red-600';
+    if (percentage >= 40) return 'text-yellow-600';
+    return 'text-green-600';
   }
 
   return (
@@ -166,7 +171,7 @@ const MedicationCheck: React.FC = () => {
       <Reveal>
         <h1 className="text-2xl font-bold mb-6 animate-slide-in-up">Medication Risk Assessment</h1>
       </Reveal>
-      
+
       {!result ? (
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card className="animate-zoom-in">
@@ -213,37 +218,37 @@ const MedicationCheck: React.FC = () => {
                   />
                 </div>
                 <div>
-                    <Label htmlFor="frequency">Frequency</Label>
-                    <Select value={currentFrequency} onValueChange={setCurrentFrequency}>
-                        <SelectTrigger id="frequency">
-                            <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Once Daily">Once Daily</SelectItem>
-                            <SelectItem value="Twice Daily">Twice Daily</SelectItem>
-                            <SelectItem value="Three Times Daily">Three Times Daily</SelectItem>
-                            <SelectItem value="As Needed">As Needed</SelectItem>
-                            <SelectItem value="Weekly">Weekly</SelectItem>
-                        </SelectContent>
-                    </Select>
+                  <Label htmlFor="frequency">Frequency</Label>
+                  <Select value={currentFrequency} onValueChange={setCurrentFrequency}>
+                    <SelectTrigger id="frequency">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Once Daily">Once Daily</SelectItem>
+                      <SelectItem value="Twice Daily">Twice Daily</SelectItem>
+                      <SelectItem value="Three Times Daily">Three Times Daily</SelectItem>
+                      <SelectItem value="As Needed">As Needed</SelectItem>
+                      <SelectItem value="Weekly">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <Button type="button" onClick={addMedication} className="w-full">
-                    Add
+                  Add
                 </Button>
               </div>
-              
+
               {medications.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
                   <h3 className="text-sm font-medium mb-2">Medication List:</h3>
                   <div className="space-y-2">
                     {medications.map((med) => (
                       <div key={med.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
-                          <div className='flex items-center gap-2'>
-                            <Pill className='h-4 w-4 text-gray-500'/>
-                            <span className="font-medium">{med.name}</span>
-                            <span className="text-sm text-gray-500">{med.dosage ? `${med.dosage}mg` : ''}</span>
-                            <span className="text-sm text-gray-500">{med.frequency}</span>
-                          </div>
+                        <div className='flex items-center gap-2'>
+                          <Pill className='h-4 w-4 text-gray-500' />
+                          <span className="font-medium">{med.name}</span>
+                          <span className="text-sm text-gray-500">{med.dosage ? `${med.dosage}mg` : ''}</span>
+                          <span className="text-sm text-gray-500">{med.frequency}</span>
+                        </div>
                         <Button type="button" variant="ghost" size="sm" onClick={() => removeMedication(med.id)}>
                           <X className="h-4 w-4" />
                         </Button>
@@ -265,35 +270,35 @@ const MedicationCheck: React.FC = () => {
               </Reveal>
             </CardHeader>
             <CardContent>
-                <Label htmlFor="conditions">List any known health conditions (e.g., Hypertension, Diabetes)</Label>
-                <Textarea
-                    id="conditions"
-                    placeholder="e.g., High blood pressure, Type 2 Diabetes, Penicillin allergy..."
-                    value={medicalConditions}
-                    onChange={(e) => setMedicalConditions(e.target.value)}
-                    className="min-h-[100px] mb-4"
+              <Label htmlFor="conditions">List any known health conditions (e.g., Hypertension, Diabetes)</Label>
+              <Textarea
+                id="conditions"
+                placeholder="e.g., High blood pressure, Type 2 Diabetes, Penicillin allergy..."
+                value={medicalConditions}
+                onChange={(e) => setMedicalConditions(e.target.value)}
+                className="min-h-[100px] mb-4"
+              />
+              <Label>Upload Medical Records (Optional)</Label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <Input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept=".pdf,.docx,.jpg,.jpeg,.png"
                 />
-                <Label>Upload Medical Records (Optional)</Label>
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <Input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    accept=".pdf,.docx,.jpg,.jpeg,.png"
-                    />
-                    <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                        <FilePlus className="h-10 w-10 text-gray-400 mb-2" />
-                        <span className="text-sm font-medium text-healthcare-600">Click to upload a file</span>
-                        <span className="text-xs text-gray-500 mt-1">PDF, DOCX, JPG, PNG</span>
-                    </Label>
-                    {file && (
-                        <div className="mt-4 text-sm text-gray-600 flex items-center justify-center">
-                            {file.name}
-                            <Button variant='ghost' size='sm' onClick={() => setFile(null)}><X className='h-4 w-4'/></Button>
-                        </div>
-                    )}
-                </div>
+                <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center justify-center">
+                  <FilePlus className="h-10 w-10 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-healthcare-600">Click to upload a file</span>
+                  <span className="text-xs text-gray-500 mt-1">PDF, DOCX, JPG, PNG</span>
+                </Label>
+                {file && (
+                  <div className="mt-4 text-sm text-gray-600 flex items-center justify-center">
+                    {file.name}
+                    <Button variant='ghost' size='sm' onClick={() => setFile(null)}><X className='h-4 w-4' /></Button>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -312,91 +317,91 @@ const MedicationCheck: React.FC = () => {
               </Reveal>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className='text-center p-6 bg-gray-50 rounded-lg'>
-                    <p className='text-lg text-gray-600'>Adverse Reaction Risk</p>
-                    <p className={`text-6xl font-bold ${getRiskColor(result.riskPercentage)}`}>{result.riskPercentage}%</p>
-                </div>
-                <div>
-                    <h3 className='font-semibold mb-2'>Summary</h3>
-                    <p className='text-gray-700'>{result.summary}</p>
-                </div>
+              <div className='text-center p-6 bg-gray-50 rounded-lg'>
+                <p className='text-lg text-gray-600'>Adverse Reaction Risk</p>
+                <p className={`text-6xl font-bold ${getRiskColor(result.riskPercentage)}`}>{result.riskPercentage}%</p>
+              </div>
+              <div>
+                <h3 className='font-semibold mb-2'>Summary</h3>
+                <p className='text-gray-700'>{result.summary}</p>
+              </div>
             </CardContent>
           </Card>
           {result.recommendedSpecialist && (
-    <Card className="border-blue-200 bg-blue-50 animate-slide-in-up">
-        <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-                <Stethoscope className="text-blue-600" />
-                Recommended Specialist
-            </CardTitle>
-            <CardDescription>
-                Based on your profile, you may want to consult the following specialist.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <p className="text-xl font-bold text-blue-800">{result.recommendedSpecialist}</p>
-        </CardContent>
-    </Card>
-)}
+            <Card className="border-blue-200 bg-blue-50 animate-slide-in-up">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Stethoscope className="text-blue-600" />
+                  Recommended Specialist
+                </CardTitle>
+                <CardDescription>
+                  Based on your profile, you may want to consult the following specialist.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xl font-bold text-blue-800">{result.recommendedSpecialist}</p>
+              </CardContent>
+            </Card>
+          )}
           {result.alternatives && result.alternatives.length > 0 && (
             <Card className="animate-zoom-in">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Pill/> Suggested Alternatives</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Modern Pharmaceutical Alternatives */}
-                    {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                                <Pill className="h-4 w-4" />
-                                Modern Pharmaceutical Alternatives
-                            </h4>
-                            <div className="space-y-3">
-                                {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').map((alt, i) => (
-                                    <motion.div key={`modern-${i}`} className='p-3 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
-                                        <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider discussing <strong className='font-semibold'>{alt.suggestion}</strong> with your doctor.</p>
-                                        <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><Pill /> Suggested Alternatives</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Modern Pharmaceutical Alternatives */}
+                {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                      <Pill className="h-4 w-4" />
+                      Modern Pharmaceutical Alternatives
+                    </h4>
+                    <div className="space-y-3">
+                      {result.alternatives.filter(alt => !alt.type || alt.type === 'modern').map((alt, i) => (
+                        <motion.div key={`modern-${i}`} className='p-3 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
+                          <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider discussing <strong className='font-semibold'>{alt.suggestion}</strong> with your doctor.</p>
+                          <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                    {/* Ayurvedic Alternatives */}
-                    {result.alternatives.filter(alt => alt.type === 'ayurvedic').length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-                                <span className="text-lg">🌿</span>
-                                Ayurvedic Alternatives
-                            </h4>
-                            <div className="space-y-3">
-                                {result.alternatives.filter(alt => alt.type === 'ayurvedic').map((alt, i) => (
-                                    <motion.div key={`ayurvedic-${i}`} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
-                                        <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider <strong className='font-semibold'>{alt.suggestion}</strong> as an Ayurvedic alternative.</p>
-                                        <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
-                                        <p className='text-xs text-green-700 mt-2 italic'>⚠️ Consult with an Ayurvedic practitioner before using any herbal remedies.</p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
+                {/* Ayurvedic Alternatives */}
+                {result.alternatives.filter(alt => alt.type === 'ayurvedic').length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                      <span className="text-lg">🌿</span>
+                      Ayurvedic Alternatives
+                    </h4>
+                    <div className="space-y-3">
+                      {result.alternatives.filter(alt => alt.type === 'ayurvedic').map((alt, i) => (
+                        <motion.div key={`ayurvedic-${i}`} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
+                          <p>For <strong className='font-semibold'>{alt.originalDrug}</strong>, consider <strong className='font-semibold'>{alt.suggestion}</strong> as an Ayurvedic alternative.</p>
+                          <p className='text-sm text-gray-600 mt-1'><strong>Reasoning:</strong> {alt.reasoning}</p>
+                          <p className='text-xs text-green-700 mt-2 italic'>⚠️ Consult with an Ayurvedic practitioner before using any herbal remedies.</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           )}
 
           {result.recommendations && result.recommendations.length > 0 && (
-             <Card className="animate-zoom-in">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><HeartPulse/> Lifestyle Recommendations</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {result.recommendations.map((rec, i) => (
-                        <motion.div key={i} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
-                            <p className='font-semibold flex items-center gap-2'>{rec.area === 'Exercise' && <Dumbbell className='h-4 w-4'/>} {rec.area}</p>
-                            <p className='text-sm text-gray-600 mt-1'>{rec.advice}</p>
-                        </motion.div>
-                    ))}
-                </CardContent>
+            <Card className="animate-zoom-in">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><HeartPulse /> Lifestyle Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {result.recommendations.map((rec, i) => (
+                  <motion.div key={i} className='p-3 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-shadow' initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.05 * i }}>
+                    <p className='font-semibold flex items-center gap-2'>{rec.area === 'Exercise' && <Dumbbell className='h-4 w-4' />} {rec.area}</p>
+                    <p className='text-sm text-gray-600 mt-1'>{rec.advice}</p>
+                  </motion.div>
+                ))}
+              </CardContent>
             </Card>
           )}
 
