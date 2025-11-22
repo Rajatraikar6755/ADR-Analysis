@@ -15,15 +15,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// interface MainLayoutProps {
-//   children: React.ReactNode;
-// }
-
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
 
-  const isPatient = user?.role === 'patient';
-  const isDoctor = user?.role === 'doctor';
+  const isPatient = user?.role === 'PATIENT';
+  const isDoctor = user?.role === 'DOCTOR';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -121,7 +117,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <span>Dashboard</span>
                   </Link>
                   <Link 
-                    to="/patients" 
+                    to="/doctor/patients" 
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <User className="h-5 w-5" />

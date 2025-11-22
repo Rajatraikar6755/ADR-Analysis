@@ -1,47 +1,27 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { authAPI } from "@/services/api";
 
-// Types for our authentication context
 type User = {
   id: string;
   name: string;
   email: string;
-  role: "patient" | "doctor";
-  profileComplete: boolean;
+  role: "PATIENT" | "DOCTOR";
 };
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: "patient" | "doctor") => Promise<void>;
+  register: (name: string, email: string, password: string, role: "patient" | "doctor") => Promise<{ needsVerification: boolean; email: string }>;
+  verifyOTP: (email: string, otp: string) => Promise<void>;
+  resendOTP: (email: string) => Promise<void>;
   logout: () => void;
-  checkAuth: () => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
   error: string | null;
 };
-
-// Mock authentication for demonstration purposes
-// In a real application, this would use actual API calls to a backend
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "patient@example.com",
-    password: "password",
-    role: "patient",
-    profileComplete: true
-  },
-  {
-    id: "2",
-    name: "Dr. Jane Smith",
-    email: "doctor@example.com",
-    password: "password",
-    role: "doctor",
-    profileComplete: true
-  }
-];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,55 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check if user is already logged in on component mount
+  // Check if user is already logged in
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    
+    if (token && storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
   }, []);
-
-  // Login function
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const foundUser = mockUsers.find(
-        user => user.email === email && user.password === password
-      );
-      
-      if (foundUser) {
-        const { password, ...userWithoutPassword } = foundUser;
-        setUser(userWithoutPassword as User);
-        localStorage.setItem("user", JSON.stringify(userWithoutPassword));
-        toast.success("Login successful!");
-        
-        // Redirect based on role and profile completion
-        if (foundUser.role === "patient") {
-          navigate("/patient-dashboard");
-        } else {
-          navigate("/doctor-dashboard");
-        }
-      } else {
-        throw new Error("Invalid email or password");
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-        toast.error(err.message);
-      } else {
-        setError("An unknown error occurred");
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Register function
   const register = async (name: string, email: string, password: string, role: "patient" | "doctor") => {
@@ -107,43 +48,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authAPI.register(name, email, password, role);
+      toast.success(response.message);
+      return { needsVerification: true, email: response.email };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Verify OTP
+  const verifyOTP = async (email: string, otp: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authAPI.verifyOTP(email, otp);
       
-      // Check if email already exists
-      const emailExists = mockUsers.some(user => user.email === email);
+      // Store token and user
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
       
-      if (emailExists) {
-        throw new Error("Email already in use");
-      }
-      
-      // In a real app, this would be an API call
-      const newUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        role,
-        profileComplete: false
-      };
-      
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      toast.success("Registration successful!");
+      toast.success(response.message);
       
       // Redirect based on role
-      if (role === "patient") {
+      if (response.user.role === "PATIENT") {
         navigate("/patient-dashboard");
       } else {
         navigate("/doctor-dashboard");
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-        toast.error(err.message);
+      const message = err instanceof Error ? err.message : "Verification failed";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const resendOTP = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authAPI.resendOTP(email);
+      toast.success(response.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resend OTP";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Login function
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authAPI.login(email, password);
+      
+      // Store token and user
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
+      
+      toast.success(response.message);
+      
+      // Redirect based on role
+      if (response.user.role === "PATIENT") {
+        navigate("/patient-dashboard");
       } else {
-        setError("An unknown error occurred");
-        toast.error("An unknown error occurred");
+        navigate("/doctor-dashboard");
       }
+    } catch (err: any) {
+      const message = err.message || "Login failed";
+      setError(message);
+      
+      // Handle email not verified case
+      if (err.needsVerification) {
+        toast.error("Please verify your email first");
+        navigate(`/verify-otp?email=${err.email}`);
+      } else {
+        toast.error(message);
+      }
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -152,25 +151,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Logout function
   const logout = () => {
     setUser(null);
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
     toast.success("Logged out successfully");
     navigate("/");
   };
 
-  // Check if user is authenticated
-  const checkAuth = async (): Promise<boolean> => {
-    // In a real app, this would verify the token with the server
-    return !!user;
+  // Forgot Password
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authAPI.forgotPassword(email);
+      toast.success(response.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send reset email";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset Password
+  const resetPassword = async (token: string, newPassword: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authAPI.resetPassword(token, newPassword);
+      toast.success(response.message);
+      navigate("/login");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to reset password";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       isLoading, 
-      login, 
-      register, 
-      logout, 
-      checkAuth,
+      login,
+      register,
+      verifyOTP,
+      resendOTP,
+      logout,
+      forgotPassword,
+      resetPassword,
       error
     }}>
       {children}

@@ -25,8 +25,13 @@ const getAIResponse = async (message: string, image: File | null): Promise<strin
 
   // The headers property has been removed.
   // The browser will now set the correct Content-Type automatically.
+  const token = localStorage.getItem('token');
+
   const response = await fetch("http://localhost:3001/api/ai-assistant", {
     method: "POST",
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
 
@@ -58,7 +63,7 @@ const AiAssistant: React.FC = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -70,10 +75,10 @@ const AiAssistant: React.FC = () => {
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
-  
+
   const sendMessage = async () => {
     if (!input.trim() && !imageFile) return;
-    
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input,
@@ -81,9 +86,9 @@ const AiAssistant: React.FC = () => {
       timestamp: new Date(),
       imageUrl: previewUrl || undefined,
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
-    
+
     const currentInput = input;
     const currentImageFile = imageFile;
 
@@ -92,17 +97,17 @@ const AiAssistant: React.FC = () => {
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsLoading(true);
-    
+
     try {
       const response = await getAIResponse(currentInput, currentImageFile);
-      
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: response,
         sender: 'assistant',
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -117,7 +122,7 @@ const AiAssistant: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -135,7 +140,7 @@ const AiAssistant: React.FC = () => {
           <p className="text-gray-600 animate-fade-in-up">Ask questions, upload images, or get general wellness advice</p>
         </Reveal>
       </div>
-      
+
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Important</AlertTitle>
@@ -168,11 +173,10 @@ const AiAssistant: React.FC = () => {
               >
                 {message.sender === 'assistant' && <Bot className="h-6 w-6 text-healthcare-600 flex-shrink-0" />}
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.sender === 'user'
+                  className={`max-w-[80%] rounded-lg p-3 ${message.sender === 'user'
                       ? 'bg-healthcare-600 text-white'
                       : 'bg-gray-100 text-gray-800'
-                  }`}
+                    }`}
                 >
                   {message.imageUrl && (
                     <img src={message.imageUrl} alt="User upload" className="rounded-md mb-2 max-w-xs" />
@@ -187,13 +191,13 @@ const AiAssistant: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-lg p-4 bg-gray-100">
-                      <div className="flex items-center gap-2">
-                          <Bot className="h-5 w-5" />
-                          <Loader2 className="h-5 w-5 animate-spin text-healthcare-600" />
-                          <span className="text-sm text-gray-500">Thinking...</span>
-                      </div>
+                <div className="max-w-[80%] rounded-lg p-4 bg-gray-100">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    <Loader2 className="h-5 w-5 animate-spin text-healthcare-600" />
+                    <span className="text-sm text-gray-500">Thinking...</span>
                   </div>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />

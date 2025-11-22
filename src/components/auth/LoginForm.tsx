@@ -133,16 +133,6 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     await login(email, password);
   };
-  
-  const fillPatientCredentials = () => {
-    setEmail('patient@example.com');
-    setPassword('password');
-  };
-
-  const fillDoctorCredentials = () => {
-    setEmail('doctor@example.com');
-    setPassword('password');
-  };
 
   return (
     <motion.div
@@ -191,17 +181,6 @@ const LoginForm: React.FC = () => {
               {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...</> : 'Login'}
             </Button>
           </form>
-
-          <div className="mt-4 space-y-2">
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={fillPatientCredentials} className="flex-1 text-xs bg-white/20 border-white/50 hover:bg-white/30 text-black">
-                Use Patient Demo
-              </Button>
-              <Button variant="outline" onClick={fillDoctorCredentials} className="flex-1 text-xs bg-white/20 border-white/50 hover:bg-white/30 text-black">
-                Use Doctor Demo
-              </Button>
-            </div>
-          </div>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-center text-black/80 w-full">

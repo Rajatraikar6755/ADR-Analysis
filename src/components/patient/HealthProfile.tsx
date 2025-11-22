@@ -43,11 +43,54 @@ const HealthProfile: React.FC = () => {
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
 
   useEffect(() => {
-    // Load saved profile data and documents from localStorage
-    const savedProfile = localStorage.getItem('healthProfile');
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
-    }
+    // Load saved profile data from backend
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        // Get the current user's ID from the auth context
+        const userId = user?.id;
+        
+        if (!userId) {
+          console.error('User ID not available');
+          return;
+        }
+
+        const res = await fetch(`/api/appointments/patient/${userId}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(prev => ({
+            ...prev,
+            dob: data.dob ? new Date(data.dob).toISOString().split('T')[0] : '',
+            gender: data.gender || '',
+            bloodType: data.bloodType || '',
+            conditions: data.conditions || '',
+            allergies: data.allergies || '',
+            emergencyContactName: data.emergencyContactName || '',
+            emergencyContactPhone: data.emergencyContactPhone || '',
+          }));
+        } else if (res.status === 404) {
+          // Profile doesn't exist yet, load from localStorage
+          const savedProfile = localStorage.getItem('healthProfile');
+          if (savedProfile) {
+            setProfile(JSON.parse(savedProfile));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fall back to localStorage
+        const savedProfile = localStorage.getItem('healthProfile');
+        if (savedProfile) {
+          setProfile(JSON.parse(savedProfile));
+        }
+      }
+    };
+
+    loadProfile();
+
+    // Load documents from localStorage
     const savedDocs = localStorage.getItem('medicalDocuments');
     if (savedDocs) {
       setDocuments(JSON.parse(savedDocs));
@@ -63,9 +106,88 @@ const HealthProfile: React.FC = () => {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = () => {
-    localStorage.setItem('healthProfile', JSON.stringify(profile));
-    toast.success('Health profile saved successfully!');
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists
+      if (!token) {
+        toast.error('Session expired. Please log in again.');
+        return;
+      }
+
+      // Validate that we have required data
+      if (!profile.dob && !profile.gender && !profile.bloodType && 
+          !profile.conditions && !profile.allergies && 
+          !profile.emergencyContactName && !profile.emergencyContactPhone) {
+        toast.error('Please fill in at least one health profile field');
+        return;
+      }
+
+      // Save to backend
+      console.log('Sending health profile to:', '/api/appointments/health-profile');
+      console.log('Profile data:', {
+        dob: profile.dob || null,
+        gender: profile.gender || null,
+        bloodType: profile.bloodType || null,
+        conditions: profile.conditions || null,
+        allergies: profile.allergies || null,
+        emergencyContactName: profile.emergencyContactName || null,
+        emergencyContactPhone: profile.emergencyContactPhone || null,
+      });
+      console.log('Token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
+
+      const res = await fetch('/api/appointments/health-profile', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dob: profile.dob || null,
+          gender: profile.gender || null,
+          bloodType: profile.bloodType || null,
+          conditions: profile.conditions || null,
+          allergies: profile.allergies || null,
+          emergencyContactName: profile.emergencyContactName || null,
+          emergencyContactPhone: profile.emergencyContactPhone || null,
+        }),
+      });
+
+      console.log('Response status:', res.status);
+      console.log('Response headers:', res.headers);
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Profile saved:', data);
+        // Also save to localStorage for local access
+        localStorage.setItem('healthProfile', JSON.stringify(profile));
+        toast.success('Health profile saved successfully!');
+      } else {
+        const contentType = res.headers.get('content-type');
+        let errorMessage = 'Failed to save profile';
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const error = await res.json();
+            console.error('API Error:', error);
+            errorMessage = error.error || errorMessage;
+          } else {
+            const text = await res.text();
+            console.error('Server error:', text);
+            errorMessage = `Server error (${res.status}): ${text.substring(0, 100)}`;
+          }
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          errorMessage = `Server error (${res.status})`;
+        }
+        
+        toast.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Network error:', error);
+      toast.error(error.message || 'Network error while saving profile');
+    }
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

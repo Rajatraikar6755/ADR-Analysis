@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users table
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  password          String
+  name              String
+  role              Role               @default(PATIENT)
+  isVerified        Boolean            @default(false)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  healthProfile     HealthProfile?
+  assessments       Assessment[]
+  medicalDocuments  MedicalDocument[]
+  appointmentsAsPatient Appointment[] @relation("PatientAppointments")
+  appointmentsAsDoctor  Appointment[] @relation("DoctorAppointments")
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  
+  @@index([email])
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+}
+
+// Health Profiles
+model HealthProfile {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  dob                   DateTime?
+  gender                String?
+  bloodType             String?
+  conditions            String?   @db.Text
+  allergies             String?   @db.Text
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// Medication Assessments
+model Assessment {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  medications           Json     // Array of medication objects
+  conditions            String?  @db.Text
+  riskPercentage        Int
+  summary               String   @db.Text
+  recommendedSpecialist String?
+  alternatives          Json     // Array of alternative suggestions
+  recommendations       Json     // Array of lifestyle recommendations
+  
+  createdAt             DateTime @default(now())
+  
+  @@index([userId])
+}
+
+// Medical Documents
+model MedicalDocument {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  size        Int
+  mimeType    String
+  path        String   // File path on server
+  
+  uploadDate  DateTime @default(now())
+  
+  @@index([userId])
+}
+
+// Appointments
+model Appointment {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       User     @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  doctorId      String
+  doctor        User     @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  
+  appointmentDate DateTime
+  appointmentTime String   // HH:MM format
+  reason          String?  @db.Text
+  status          AppointmentStatus @default(PENDING)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+}
+
+// Messages for doctor-patient communication
+model Message {
+  id        String   @id @default(uuid())
+  senderId  String
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId String
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}

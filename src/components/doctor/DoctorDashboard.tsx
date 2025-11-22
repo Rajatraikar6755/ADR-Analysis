@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,10 @@ import {
   Search, 
   MessageSquare, 
   ChevronDown,
-  Filter 
+  Filter,
+  Check,
+  X,
+  Loader2
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -22,6 +24,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/sonner';
+import { PatientProfileModal } from './PatientProfileModal';
+import { MessagingModal } from './MessagingModal';
+
+interface Appointment {
+  id: string;
+  patientId: string;
+  patient: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  appointmentDate: string;
+  appointmentTime: string;
+  reason?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+}
 
 // Mock data
 const patientsData = [
@@ -72,41 +92,92 @@ const patientsData = [
   }
 ];
 
-const appointmentsData = [
-  {
-    id: '1',
-    patient: 'John Doe',
-    date: '2023-05-05',
-    time: '10:30 AM',
-    status: 'confirmed'
-  },
-  {
-    id: '2',
-    patient: 'Mary Williams',
-    date: '2023-05-05',
-    time: '2:15 PM',
-    status: 'confirmed'
-  },
-  {
-    id: '3',
-    patient: 'James Brown',
-    date: '2023-05-06',
-    time: '11:00 AM',
-    status: 'pending'
-  }
-];
-
 const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [riskFilter, setRiskFilter] = useState<string | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  // Modal states
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [messagingModalOpen, setMessagingModalOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   
-  // Filter patients based on search query and risk filter
-  const filteredPatients = patientsData.filter(patient => {
-    const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRisk = riskFilter ? patient.riskLevel === riskFilter : true;
-    return matchesSearch && matchesRisk;
+  // Fetch appointments on mount
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setIsLoadingAppointments(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/appointments/doctor/appointments', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch appointments');
+      const data = await response.json();
+      setAppointments(data);
+    } catch (err) {
+      console.error('Failed to load appointments:', err);
+      toast.error('Failed to load appointments');
+    } finally {
+      setIsLoadingAppointments(false);
+    }
+  };
+
+  const updateAppointmentStatus = async (appointmentId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:3001/api/appointments/${appointmentId}/status`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update appointment');
+      toast.success(`Appointment ${newStatus.toLowerCase()}`);
+      fetchAppointments();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update appointment');
+    }
+  };
+  
+  // Get unique confirmed patients from actual appointment data
+  const confirmedAppointments = appointments.filter(a => a.status === 'CONFIRMED');
+  
+  // Create a map of unique patients from confirmed appointments
+  const confirmedPatientsMap = new Map();
+  confirmedAppointments.forEach(apt => {
+    if (!confirmedPatientsMap.has(apt.patientId)) {
+      confirmedPatientsMap.set(apt.patientId, apt.patient);
+    }
   });
+
+  // Filter patients based on search query
+  const filteredPatients = Array.from(confirmedPatientsMap.values()).filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  const filteredAppointments = appointments.filter(appointment => {
+    const matchesStatus = statusFilter ? appointment.status === statusFilter : true;
+    return matchesStatus;
+  });
+
+  const pendingCount = appointments.filter(a => a.status === 'PENDING').length;
+  const confirmedCount = appointments.filter(a => a.status === 'CONFIRMED').length;
 
   return (
     <div className="space-y-6">
@@ -131,8 +202,8 @@ const DoctorDashboard: React.FC = () => {
             <div className="flex items-center">
               <AlertTriangle className="h-8 w-8 text-danger-500 mr-4" />
               <div>
-                <p className="text-xl font-bold">2</p>
-                <p className="text-sm text-danger-700">High Risk Patients</p>
+                <p className="text-xl font-bold">{confirmedAppointments.length}</p>
+                <p className="text-sm text-danger-700">Confirmed Appointments</p>
               </div>
             </div>
           </CardContent>
@@ -145,8 +216,8 @@ const DoctorDashboard: React.FC = () => {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-healthcare-600 mr-4" />
               <div>
-                <p className="text-xl font-bold">5</p>
-                <p className="text-sm text-gray-500">Total Patients</p>
+                <p className="text-xl font-bold">{confirmedPatientsMap.size}</p>
+                <p className="text-sm text-gray-500">Confirmed Patients</p>
               </div>
             </div>
           </CardContent>
@@ -159,8 +230,8 @@ const DoctorDashboard: React.FC = () => {
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-healthcare-600 mr-4" />
               <div>
-                <p className="text-xl font-bold">3</p>
-                <p className="text-sm text-gray-500">Upcoming Appointments</p>
+                <p className="text-xl font-bold">{pendingCount}</p>
+                <p className="text-sm text-gray-500">Pending Appointments</p>
               </div>
             </div>
           </CardContent>
@@ -179,7 +250,7 @@ const DoctorDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle className="text-lg">Patient Management</CardTitle>
+                <CardTitle className="text-lg">Confirmed Patients</CardTitle>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -190,29 +261,6 @@ const DoctorDashboard: React.FC = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2">
-                        <Filter className="h-4 w-4" />
-                        <span>{riskFilter ? `${riskFilter} Risk` : 'All Risks'}</span>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setRiskFilter(null)}>
-                        All Risks
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setRiskFilter('high')}>
-                        High Risk
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setRiskFilter('medium')}>
-                        Medium Risk
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setRiskFilter('low')}>
-                        Low Risk
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             </CardHeader>
@@ -221,10 +269,8 @@ const DoctorDashboard: React.FC = () => {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Patient</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Age</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Risk Level</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Conditions</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500">Patient Name</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500">Email</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
                     </tr>
                   </thead>
@@ -239,33 +285,34 @@ const DoctorDashboard: React.FC = () => {
                               </div>
                               <div>
                                 <p className="font-medium">{patient.name}</p>
-                                <p className="text-xs text-gray-500">Last check: {new Date(patient.lastAssessment).toLocaleDateString()}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-4">{patient.age}</td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              patient.riskLevel === 'high' ? 'bg-danger-100 text-danger-700' :
-                              patient.riskLevel === 'medium' ? 'bg-warning-100 text-warning-700' :
-                              'bg-success-100 text-success-700'
-                            }`}>
-                              {patient.riskLevel.charAt(0).toUpperCase() + patient.riskLevel.slice(1)}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex flex-wrap gap-1">
-                              {patient.conditions.map((condition, index) => (
-                                <span key={index} className="bg-gray-100 px-2 py-1 rounded-full text-xs">
-                                  {condition}
-                                </span>
-                              ))}
-                            </div>
+                            <p className="text-sm text-gray-600">{patient.email}</p>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline">View</Button>
-                              <Button size="sm" className="bg-healthcare-600 hover:bg-healthcare-700">Contact</Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedPatient({ id: patient.id, name: patient.name });
+                                  setProfileModalOpen(true);
+                                }}
+                              >
+                                View Profile
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="bg-healthcare-600 hover:bg-healthcare-700"
+                                onClick={() => {
+                                  setSelectedPatient({ id: patient.id, name: patient.name });
+                                  setMessagingModalOpen(true);
+                                }}
+                              >
+                                Message
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -289,40 +336,133 @@ const DoctorDashboard: React.FC = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
-              <CardDescription>Manage your scheduled appointments</CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg">Appointment Requests</CardTitle>
+                  <CardDescription>Manage booking requests from patients</CardDescription>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>{statusFilter ? statusFilter : 'All Status'}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setStatusFilter(null)}>
+                      All Status
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('PENDING')}>
+                      Pending
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('CONFIRMED')}>
+                      Confirmed
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('COMPLETED')}>
+                      Completed
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {appointmentsData.map((appointment) => (
-                  <div 
-                    key={appointment.id} 
-                    className="p-4 border rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                  >
-                    <div>
-                      <p className="font-medium">{appointment.patient}</p>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        <span>{new Date(appointment.date).toLocaleDateString()} at {appointment.time}</span>
+              {isLoadingAppointments ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-healthcare-600" />
+                </div>
+              ) : filteredAppointments.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredAppointments.map((appointment) => (
+                    <div 
+                      key={appointment.id} 
+                      className="p-4 border rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-50 hover:bg-gray-100 transition"
+                    >
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg">{appointment.patient.name}</p>
+                        <div className="flex items-center text-sm text-gray-600 mt-1">
+                          <Clock className="h-4 w-4 mr-2" />
+                          📅 {new Date(appointment.appointmentDate).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })} at {appointment.appointmentTime}
+                        </div>
+                        {appointment.reason && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            <strong>Reason:</strong> {appointment.reason}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {appointment.patient.email}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                          appointment.status === 'CONFIRMED' 
+                            ? 'bg-green-100 text-green-800' 
+                            : appointment.status === 'PENDING'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : appointment.status === 'COMPLETED'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {appointment.status}
+                        </span>
+                        {appointment.status === 'PENDING' && (
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => updateAppointmentStatus(appointment.id, 'CONFIRMED')}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Confirm
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => updateAppointmentStatus(appointment.id, 'CANCELLED')}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        appointment.status === 'confirmed' ? 'bg-success-100 text-success-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                      </span>
-                      <Button size="sm" variant="outline">Reschedule</Button>
-                      <Button size="sm" className="bg-healthcare-600 hover:bg-healthcare-700">Start Call</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                  <p>No appointments found</p>
+                </div>
+              )}
             </CardContent>
           </Card>
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      {selectedPatient && (
+        <>
+          <PatientProfileModal
+            open={profileModalOpen}
+            onOpenChange={setProfileModalOpen}
+            patientId={selectedPatient.id}
+            patientName={selectedPatient.name}
+          />
+          <MessagingModal
+            open={messagingModalOpen}
+            onOpenChange={setMessagingModalOpen}
+            recipientId={selectedPatient.id}
+            recipientName={selectedPatient.name}
+          />
+        </>
+      )}
     </div>
   );
 };

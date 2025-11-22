@@ -17,6 +17,8 @@ import PremiumPlansPage from "./pages/PremiumPlansPage";
 import AssessmentDetailPage from "./pages/AssessmentDetailPage"; 
 import HealthProfilePage from "./pages/HealthProfilePage";
 import FindDoctorPage from "./pages/FindDoctorPage";
+import PatientListPage from './pages/patientListPage';
+import VerifyOTPPage from "./pages/VerifyOTPPage";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,11 @@ const AnimatedRoutes = () => {
             <DoctorDashboardPage />
           </motion.div>
         } />
+        <Route path="/doctor/patients" element={
+         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
+           <PatientListPage />
+         </motion.div>
+       } />
         <Route path="/medication-check" element={
           <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.4 }}>
             <MedicationCheckPage />
@@ -85,6 +92,11 @@ const AnimatedRoutes = () => {
             <NotFound />
           </motion.div>
         } />
+        <Route path="/verify-otp" element={
+  <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+    <VerifyOTPPage />
+  </motion.div>
+} />
       </Routes>
     </AnimatePresence>
   );

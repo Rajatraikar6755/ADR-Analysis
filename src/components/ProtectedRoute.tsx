@@ -28,10 +28,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If a specific role is required but user doesn't have it
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && user.role.toLowerCase() !== requiredRole.toLowerCase()) {
     return (
       <Navigate 
-        to={user.role === 'patient' ? '/patient-dashboard' : '/doctor-dashboard'} 
+        to={user.role === 'PATIENT' ? '/patient-dashboard' : '/doctor-dashboard'} 
         replace 
       />
     );

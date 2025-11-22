@@ -3,6 +3,10 @@ const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
 const { getAdverseEvents } = require('./fda-api.js');
+const { authenticateToken } = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
+const appointmentRoutes = require('./routes/appointments');
+const messageRoutes = require('./routes/messages');
 
 let fetch;
 
@@ -25,12 +29,24 @@ const startServer = async () => {
   const port = 3001;
 
   app.use(cors());
+  app.use(express.json());
 
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/v1/chat/completions";
 
-  // ROUTE 1: For the AI Assistant Chat
-  app.post('/api/ai-assistant', upload.single('image'), async (req, res) => {
+  // ========== AUTH ROUTES (NO AUTH REQUIRED) ==========
+  app.use('/api/auth', authRoutes);
+
+  // ========== APPOINTMENT ROUTES ==========
+  app.use('/api/appointments', appointmentRoutes);
+
+  // ========== MESSAGE ROUTES ==========
+  app.use('/api/messages', messageRoutes);
+
+  // ========== PROTECTED ROUTES (REQUIRE AUTH) ==========
+
+  // AI Assistant Chat (Protected)
+  app.post('/api/ai-assistant', authenticateToken, upload.single('image'), async (req, res) => {
     if (!GITHUB_TOKEN) {
       return res.status(500).json({ error: 'GitHub API token is not configured.' });
     }
@@ -76,8 +92,8 @@ const startServer = async () => {
     }
   });
 
-  // ROUTE 2: For the Medication Risk Assessment (UPDATED)
-  app.post('/api/assess-risk', upload.single('document'), async (req, res) => {
+  // Medication Risk Assessment (Protected)
+  app.post('/api/assess-risk', authenticateToken, upload.single('document'), async (req, res) => {
     if (!GITHUB_TOKEN) {
         return res.status(500).json({ error: 'GitHub API token is not configured.' });
     }
@@ -191,8 +207,8 @@ const startServer = async () => {
     }
   });
 
-// ROUTE 3: For Finding Nearby Doctors (UPDATED AND FINAL)
-app.get('/api/nearby-doctors', async (req, res) => {
+  // Find Nearby Doctors (Protected)
+  app.get('/api/nearby-doctors', authenticateToken, async (req, res) => {
     const { lat, lon, radius = '5000' } = req.query;
     const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
@@ -203,19 +219,14 @@ app.get('/api/nearby-doctors', async (req, res) => {
         return res.status(400).json({ error: 'Latitude and longitude are required.' });
     }
 
-    // --- NEW, BROADER SEARCH QUERY ---
-    // Instead of a strict 'type', we use a more powerful 'keyword' search.
-    // This finds places that mention "doctor", "clinic", or "hospital".
     const keyword = "doctor OR clinic OR hospital";
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_KEY}`;
 
     try {
-        console.log(`Fetching from Google Places API: ${url}`); // Log the URL we are calling
+        console.log(`Fetching from Google Places API: ${url}`);
         const response = await fetch(url);
         const data = await response.json();
 
-        // --- THE MOST IMPORTANT DEBUGGING STEP ---
-        // Log the entire response from Google to the terminal.
         console.log("--- RAW GOOGLE API RESPONSE ---");
         console.log(JSON.stringify(data, null, 2));
         console.log("-----------------------------");
@@ -225,21 +236,20 @@ app.get('/api/nearby-doctors', async (req, res) => {
         }
 
         if (!data.results || data.results.length === 0) {
-            return res.status(200).json([]); // Send an empty array if no results
+            return res.status(200).json([]);
         }
 
-        // We need to make a second call for each doctor to get contact details
         const doctorDetailsPromises = data.results.map(async (place) => {
             const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,website,opening_hours,types,vicinity&key=${GOOGLE_MAPS_KEY}`;
             const detailsResponse = await fetch(detailsUrl);
             const detailsData = await detailsResponse.json();
             
-            if (!detailsData.result) return null; // Skip if details fetching fails
+            if (!detailsData.result) return null;
 
             return {
                 id: place.place_id,
                 name: detailsData.result.name,
-                address: detailsData.result.vicinity, // Added address
+                address: detailsData.result.vicinity,
                 phone: detailsData.result.formatted_phone_number || 'Not available',
                 website: detailsData.result.website || 'Not available',
                 specialties: detailsData.result.types.filter(t => t !== 'health' && t !== 'point_of_interest' && t !== 'establishment'),
@@ -247,7 +257,7 @@ app.get('/api/nearby-doctors', async (req, res) => {
             };
         });
 
-        const doctors = (await Promise.all(doctorDetailsPromises)).filter(Boolean); // Filter out any null results
+        const doctors = (await Promise.all(doctorDetailsPromises)).filter(Boolean);
 
         res.status(200).json(doctors);
 
@@ -255,10 +265,17 @@ app.get('/api/nearby-doctors', async (req, res) => {
         console.error('CRITICAL ERROR in /api/nearby-doctors:', error);
         res.status(500).json({ error: error.message });
     }
-});
+  });
+
+  // Health check endpoint (no auth required)
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is running' });
+  });
 
   app.listen(port, () => {
-    console.log(`✅ Backend server running with all endpoints on http://localhost:${port}`);
+    console.log(`✅ Backend server running on http://localhost:${port}`);
+    console.log(`📧 SMTP configured: ${process.env.SMTP_HOST}`);
+    console.log(`🔐 JWT secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
   });
 };
 

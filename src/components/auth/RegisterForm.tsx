@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ const RegisterForm: React.FC = () => {
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');
   const [passwordError, setPasswordError] = useState('');
   const { register, isLoading, error } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +32,17 @@ const RegisterForm: React.FC = () => {
       setPasswordError('Password must be at least 6 characters');
       return;
     }
+    try {
+    const result = await register(name, email, password, role);
     
-    await register(name, email, password, role);
+    // Redirect to OTP verification
+    if (result.needsVerification) {
+      navigate(`/verify-otp?email=${result.email}`);
+    }
+  } catch (err) {
+    // Error handled in context
+  }
+    
   };
 
   return (

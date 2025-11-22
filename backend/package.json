@@ -4,6 +4,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +20,14 @@
     "express": "^5.1.0",
     "form-data": "^4.0.4",
     "multer": "^2.0.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "@prisma/client": "^5.7.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7"
+  },
+  "devDependencies": {
+    "prisma": "^5.7.0",
+    "nodemon": "^3.0.2"
   }
 }

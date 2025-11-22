@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, MessageSquare, Pill, FilePlus, FileText, Activity, Trash2 } from 'lucide-react'; // Trash2 is now imported
+import { AlertTriangle, MessageSquare, Pill, FilePlus, FileText, Activity, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
+import { PatientMessagingModal } from './PatientMessagingModal';
 
 interface SavedAssessment {
   id: string;
@@ -14,19 +15,28 @@ interface SavedAssessment {
   riskPercentage: number;
 }
 
-// Mock data for appointments (as this is not dynamic yet)
-const upcomingAppointments = [
-  {
-    id: 1,
-    doctor: 'Dr. Jane Smith',
-    date: '2023-05-10',
-    time: '2:30 PM'
-  }
-];
+interface Appointment {
+  id: string;
+  doctorId: string;
+  doctor: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  appointmentDate: string;
+  appointmentTime: string;
+  reason?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+}
 
 const PatientDashboard: React.FC = () => {
   const { user } = useAuth();
   const [recentAssessments, setRecentAssessments] = useState<SavedAssessment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [messagingModalOpen, setMessagingModalOpen] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<{ id: string; name: string; status: string } | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('adr-assessments');
@@ -34,6 +44,42 @@ const PatientDashboard: React.FC = () => {
       setRecentAssessments(JSON.parse(saved));
     }
   }, []);
+
+  // Fetch real appointments from backend
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/appointments/patient/appointments', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAppointments(data);
+      } else {
+        console.error('Failed to fetch appointments');
+      }
+    } catch (error: any) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Failed to load appointments');
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
+  const handleMessageClick = (appointment: Appointment) => {
+    setSelectedDoctor({
+      id: appointment.doctorId,
+      name: appointment.doctor.name,
+      status: appointment.status,
+    });
+    setMessagingModalOpen(true);
+  };
 
   const handleDeleteAssessment = (idToDelete: string) => {
     // Remove from summary list
@@ -204,25 +250,79 @@ const PatientDashboard: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
-              <Pill className="h-5 w-5 text-gray-400" />
+              <MessageSquare className="h-5 w-5 text-gray-400" />
             </div>
           </CardHeader>
           <CardContent>
-            {upcomingAppointments.length > 0 ? (
+            {loadingAppointments ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-healthcare-600" />
+              </div>
+            ) : appointments.length > 0 ? (
               <div className="space-y-4">
-                {upcomingAppointments.map((appointment) => (
-                  <div key={appointment.id} className="p-4 rounded-lg border border-gray-200">
-                    <p className="font-medium">{appointment.doctor}</p>
-                    <div className="flex items-center text-gray-600 text-sm mt-1">
-                      <span>{new Date(appointment.date).toLocaleDateString()}</span>
-                      <span className="mx-2">•</span>
-                      <span>{appointment.time}</span>
+                {appointments.map((appointment) => (
+                  <motion.div
+                    key={appointment.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg border border-gray-200"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-medium">{appointment.doctor.name}</p>
+                        <div className="flex items-center text-gray-600 text-sm mt-1">
+                          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+                          <span className="mx-2">•</span>
+                          <span>{appointment.appointmentTime}</span>
+                        </div>
+                        {appointment.reason && (
+                          <p className="text-gray-600 text-sm mt-2">Reason: {appointment.reason}</p>
+                        )}
+                      </div>
+                      {/* Status Badge */}
+                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        appointment.status === 'CONFIRMED'
+                          ? 'bg-green-100 text-green-700'
+                          : appointment.status === 'PENDING'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : appointment.status === 'COMPLETED'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {appointment.status}
+                      </div>
                     </div>
-                    <div className="mt-3 flex space-x-2">
-                      <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
-                      <Button variant="outline" size="sm" className="text-xs">Cancel</Button>
+
+                    <div className="mt-4 flex gap-2 flex-wrap">
+                      {/* Message Button - Only enabled if appointment is CONFIRMED */}
+                      <Button
+                        onClick={() => handleMessageClick(appointment)}
+                        disabled={appointment.status !== 'CONFIRMED'}
+                        className={`text-xs ${
+                          appointment.status === 'CONFIRMED'
+                            ? 'bg-healthcare-600 hover:bg-healthcare-700 text-white'
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Message Doctor
+                      </Button>
+                      
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Reschedule
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Cancel
+                      </Button>
                     </div>
-                  </div>
+
+                    {/* Help text for disabled message button */}
+                    {appointment.status !== 'CONFIRMED' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        💡 Messaging will be available once the doctor confirms your appointment
+                      </p>
+                    )}
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -239,6 +339,17 @@ const PatientDashboard: React.FC = () => {
         </Card>
         </motion.div>
       </div>
+
+      {/* Patient Messaging Modal */}
+      {selectedDoctor && (
+        <PatientMessagingModal
+          open={messagingModalOpen}
+          onOpenChange={setMessagingModalOpen}
+          doctorId={selectedDoctor.id}
+          doctorName={selectedDoctor.name}
+          appointmentStatus={selectedDoctor.status}
+        />
+      )}
     </div>
   );
 };
