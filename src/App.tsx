@@ -11,14 +11,16 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PatientDashboardPage from "./pages/PatientDashboardPage";
 import DoctorDashboardPage from "./pages/DoctorDashboardPage";
+import DoctorProfilePage from "./pages/DoctorProfilePage";
 import MedicationCheckPage from "./pages/MedicationCheckPage";
 import AiAssistantPage from "./pages/AiAssistantPage";
 import PremiumPlansPage from "./pages/PremiumPlansPage";
-import AssessmentDetailPage from "./pages/AssessmentDetailPage"; 
+import AssessmentDetailPage from "./pages/AssessmentDetailPage";
 import HealthProfilePage from "./pages/HealthProfilePage";
 import FindDoctorPage from "./pages/FindDoctorPage";
-import PatientListPage from './pages/patientListPage';
+import PatientListPage from './pages/PatientListPage';
 import VerifyOTPPage from "./pages/VerifyOTPPage";
+import MedicalAssessmentsPage from "./pages/MedicalAssessmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -53,10 +55,15 @@ const AnimatedRoutes = () => {
           </motion.div>
         } />
         <Route path="/doctor/patients" element={
-         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
-           <PatientListPage />
-         </motion.div>
-       } />
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
+            <PatientListPage />
+          </motion.div>
+        } />
+        <Route path="/doctor/profile" element={
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+            <DoctorProfilePage />
+          </motion.div>
+        } />
         <Route path="/medication-check" element={
           <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.4 }}>
             <MedicationCheckPage />
@@ -87,16 +94,21 @@ const AnimatedRoutes = () => {
             <FindDoctorPage />
           </motion.div>
         } />
+        <Route path="/medical-assessments" element={
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+            <MedicalAssessmentsPage />
+          </motion.div>
+        } />
         <Route path="*" element={
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <NotFound />
           </motion.div>
         } />
         <Route path="/verify-otp" element={
-  <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
-    <VerifyOTPPage />
-  </motion.div>
-} />
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+            <VerifyOTPPage />
+          </motion.div>
+        } />
       </Routes>
     </AnimatePresence>
   );

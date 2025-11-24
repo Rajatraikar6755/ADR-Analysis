@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
@@ -7,6 +8,10 @@ const { authenticateToken } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const appointmentRoutes = require('./routes/appointments');
 const messageRoutes = require('./routes/messages');
+const documentRoutes = require('./routes/documents');
+const doctorRoutes = require('./routes/doctor');
+const assessmentRoutes = require('./routes/assessments');
+const { initializeSocketServer } = require('./socket-server');
 
 let fetch;
 
@@ -14,17 +19,17 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const availableSpecialties = [
-    "Cardiologist", "Dermatologist", "Neurologist", "Oncologist", 
-    "Pediatrician", "Surgeon", "Psychiatrist", "Gastroenterologist",
-    "Endocrinologist", "Ophthalmologist", "ENT Specialist", "Orthopedic Surgeon",
-    "Urologist", "Nephrologist", "Pulmonologist", "Allergist/Immunologist",
-    "Anesthesiologist", "Obstetrician-Gynecologist (OB/GYN)"
+  "Cardiologist", "Dermatologist", "Neurologist", "Oncologist",
+  "Pediatrician", "Surgeon", "Psychiatrist", "Gastroenterologist",
+  "Endocrinologist", "Ophthalmologist", "ENT Specialist", "Orthopedic Surgeon",
+  "Urologist", "Nephrologist", "Pulmonologist", "Allergist/Immunologist",
+  "Anesthesiologist", "Obstetrician-Gynecologist (OB/GYN)"
 ];
 
 const startServer = async () => {
   const { default: nodeFetch } = await import('node-fetch');
   fetch = nodeFetch;
-  
+
   const app = express();
   const port = 3001;
 
@@ -42,6 +47,18 @@ const startServer = async () => {
 
   // ========== MESSAGE ROUTES ==========
   app.use('/api/messages', messageRoutes);
+
+  // ========== DOCUMENT ROUTES ==========
+  app.use('/api/documents', documentRoutes);
+
+  // ========== DOCTOR ROUTES ==========
+  app.use('/api/doctors', doctorRoutes);
+
+  // ========== ASSESSMENT ROUTES ==========
+  app.use('/api/assessments', assessmentRoutes);
+
+  // Serve static files
+  app.use('/uploads', express.static('uploads'));
 
   // ========== PROTECTED ROUTES (REQUIRE AUTH) ==========
 
@@ -77,12 +94,12 @@ const startServer = async () => {
         headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'openai/gpt-4o',
-          messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: userContent } ],
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }],
         }),
       });
 
       if (!response.ok) throw new Error(`AI API error: ${await response.text()}`);
-      
+
       const data = await response.json();
       res.status(200).json({ response: data.choices[0].message.content });
 
@@ -95,27 +112,27 @@ const startServer = async () => {
   // Medication Risk Assessment (Protected)
   app.post('/api/assess-risk', authenticateToken, upload.single('document'), async (req, res) => {
     if (!GITHUB_TOKEN) {
-        return res.status(500).json({ error: 'GitHub API token is not configured.' });
+      return res.status(500).json({ error: 'GitHub API token is not configured.' });
     }
     try {
-        const medications = JSON.parse(req.body.medications || '[]');
-        const conditions = req.body.conditions || 'No additional conditions provided.';
-        const healthProfile = JSON.parse(req.body.healthProfile || '{}');
+      const medications = JSON.parse(req.body.medications || '[]');
+      const conditions = req.body.conditions || 'No additional conditions provided.';
+      const healthProfile = JSON.parse(req.body.healthProfile || '{}');
 
-        let fdaData = '';
-        for (const med of medications) {
-            const events = await getAdverseEvents(med.name); 
-            if (events.length > 0) {
-                fdaData += `\n- Top 5 reported adverse events for ${med.name} (from FAERS): ${events.join(', ')}.`;
-            }
+      let fdaData = '';
+      for (const med of medications) {
+        const events = await getAdverseEvents(med.name);
+        if (events.length > 0) {
+          fdaData += `\n- Top 5 reported adverse events for ${med.name} (from FAERS): ${events.join(', ')}.`;
         }
-        const documentFile = req.file;
-        let documentText = 'No document provided.';
-        if (documentFile) {
-            documentText = `An uploaded document named ${documentFile.originalname} is also available for context.`;
-        }
+      }
+      const documentFile = req.file;
+      let documentText = 'No document provided.';
+      if (documentFile) {
+        documentText = `An uploaded document named ${documentFile.originalname} is also available for context.`;
+      }
 
-        const systemPrompt = `
+      const systemPrompt = `
             You are an expert clinical pharmacologist AI assistant with deep knowledge of both modern medicine and Ayurvedic medicine. Your role is to analyze patient data and provide a detailed, safety-conscious risk assessment with comprehensive alternative suggestions.
 
             **CRITICAL INSTRUCTIONS:**
@@ -156,7 +173,7 @@ const startServer = async () => {
             **MANDATORY REQUIREMENT:** You MUST provide at least one Ayurvedic alternative for each medication analyzed. If you cannot find a specific Ayurvedic alternative, suggest general Ayurvedic herbs that support the body system affected by the medication.
         `;
 
-        const userPrompt = `
+      const userPrompt = `
           Please analyze the following data and provide comprehensive alternative suggestions including both modern pharmaceutical and Ayurvedic alternatives.
 
           **1. Real-World Data from FDA Adverse Event Reporting System (FAERS):**
@@ -185,25 +202,25 @@ const startServer = async () => {
           
         `;
 
-        const response = await fetch(GITHUB_MODELS_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'openai/gpt-4o',
-                messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt } ],
-                response_format: { type: "json_object" },
-            }),
-        });
-        
-        if (!response.ok) throw new Error(`AI API error: ${await response.text()}`);
-        
-        const data = await response.json();
-        const jsonResponse = JSON.parse(data.choices[0].message.content);
-        res.status(200).json(jsonResponse);
+      const response = await fetch(GITHUB_MODELS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o',
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!response.ok) throw new Error(`AI API error: ${await response.text()}`);
+
+      const data = await response.json();
+      const jsonResponse = JSON.parse(data.choices[0].message.content);
+      res.status(200).json(jsonResponse);
 
     } catch (error) {
-        console.error('Error in /api/assess-risk:', error);
-        res.status(500).json({ error: error.message });
+      console.error('Error in /api/assess-risk:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -213,57 +230,57 @@ const startServer = async () => {
     const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
     if (!GOOGLE_MAPS_KEY) {
-        return res.status(500).json({ error: 'Google Maps API key is not configured.' });
+      return res.status(500).json({ error: 'Google Maps API key is not configured.' });
     }
     if (!lat || !lon) {
-        return res.status(400).json({ error: 'Latitude and longitude are required.' });
+      return res.status(400).json({ error: 'Latitude and longitude are required.' });
     }
 
     const keyword = "doctor OR clinic OR hospital";
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_KEY}`;
 
     try {
-        console.log(`Fetching from Google Places API: ${url}`);
-        const response = await fetch(url);
-        const data = await response.json();
+      console.log(`Fetching from Google Places API: ${url}`);
+      const response = await fetch(url);
+      const data = await response.json();
 
-        console.log("--- RAW GOOGLE API RESPONSE ---");
-        console.log(JSON.stringify(data, null, 2));
-        console.log("-----------------------------");
+      console.log("--- RAW GOOGLE API RESPONSE ---");
+      console.log(JSON.stringify(data, null, 2));
+      console.log("-----------------------------");
 
-        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-            throw new Error(data.error_message || `Google API returned status: ${data.status}`);
-        }
+      if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+        throw new Error(data.error_message || `Google API returned status: ${data.status}`);
+      }
 
-        if (!data.results || data.results.length === 0) {
-            return res.status(200).json([]);
-        }
+      if (!data.results || data.results.length === 0) {
+        return res.status(200).json([]);
+      }
 
-        const doctorDetailsPromises = data.results.map(async (place) => {
-            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,website,opening_hours,types,vicinity&key=${GOOGLE_MAPS_KEY}`;
-            const detailsResponse = await fetch(detailsUrl);
-            const detailsData = await detailsResponse.json();
-            
-            if (!detailsData.result) return null;
+      const doctorDetailsPromises = data.results.map(async (place) => {
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,website,opening_hours,types,vicinity&key=${GOOGLE_MAPS_KEY}`;
+        const detailsResponse = await fetch(detailsUrl);
+        const detailsData = await detailsResponse.json();
 
-            return {
-                id: place.place_id,
-                name: detailsData.result.name,
-                address: detailsData.result.vicinity,
-                phone: detailsData.result.formatted_phone_number || 'Not available',
-                website: detailsData.result.website || 'Not available',
-                specialties: detailsData.result.types.filter(t => t !== 'health' && t !== 'point_of_interest' && t !== 'establishment'),
-                isOpen: detailsData.result.opening_hours ? detailsData.result.opening_hours.open_now : 'Unknown',
-            };
-        });
+        if (!detailsData.result) return null;
 
-        const doctors = (await Promise.all(doctorDetailsPromises)).filter(Boolean);
+        return {
+          id: place.place_id,
+          name: detailsData.result.name,
+          address: detailsData.result.vicinity,
+          phone: detailsData.result.formatted_phone_number || 'Not available',
+          website: detailsData.result.website || 'Not available',
+          specialties: detailsData.result.types.filter(t => t !== 'health' && t !== 'point_of_interest' && t !== 'establishment'),
+          isOpen: detailsData.result.opening_hours ? detailsData.result.opening_hours.open_now : 'Unknown',
+        };
+      });
 
-        res.status(200).json(doctors);
+      const doctors = (await Promise.all(doctorDetailsPromises)).filter(Boolean);
+
+      res.status(200).json(doctors);
 
     } catch (error) {
-        console.error('CRITICAL ERROR in /api/nearby-doctors:', error);
-        res.status(500).json({ error: error.message });
+      console.error('CRITICAL ERROR in /api/nearby-doctors:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -272,7 +289,11 @@ const startServer = async () => {
     res.json({ status: 'ok', message: 'Server is running' });
   });
 
-  app.listen(port, () => {
+  // Create HTTP server and attach Socket.IO
+  const httpServer = http.createServer(app);
+  const io = initializeSocketServer(httpServer);
+
+  httpServer.listen(port, () => {
     console.log(`✅ Backend server running on http://localhost:${port}`);
     console.log(`📧 SMTP configured: ${process.env.SMTP_HOST}`);
     console.log(`🔐 JWT secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
@@ -280,5 +301,5 @@ const startServer = async () => {
 };
 
 startServer().catch(err => {
-    console.error("Failed to start server:", err);
+  console.error("Failed to start server:", err);
 });

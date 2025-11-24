@@ -14,6 +14,12 @@ interface Doctor {
   id: string;
   name: string;
   email: string;
+  profile?: {
+    qualification?: string;
+    specialties?: string[];
+    about?: string;
+    profilePicture?: string;
+  };
 }
 
 interface Appointment {
@@ -34,7 +40,7 @@ const FindDoctor: React.FC = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
-    // Booking form state
+  // Booking form state
   const [bookingForm, setBookingForm] = useState({
     date: '',
     time: '',
@@ -55,7 +61,32 @@ const FindDoctor: React.FC = () => {
       const response = await fetch('http://localhost:3001/api/appointments/doctors');
       if (!response.ok) throw new Error('Failed to fetch doctors');
       const data = await response.json();
-      setDoctors(data);
+
+      // Fetch profile for each doctor
+      const doctorsWithProfiles = await Promise.all(
+        data.map(async (doctor: Doctor) => {
+          try {
+            const profileResponse = await fetch(`http://localhost:3001/api/doctors/${doctor.id}`);
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              return {
+                ...doctor,
+                profile: {
+                  qualification: profileData.qualification,
+                  specialties: profileData.specialties || [],
+                  about: profileData.about,
+                  profilePicture: profileData.profilePicture
+                }
+              };
+            }
+          } catch (err) {
+            console.error(`Failed to fetch profile for doctor ${doctor.id}:`, err);
+          }
+          return doctor;
+        })
+      );
+
+      setDoctors(doctorsWithProfiles);
     } catch (err) {
       toast.error('Failed to load doctors');
       console.error(err);
@@ -79,6 +110,19 @@ const FindDoctor: React.FC = () => {
   };
 
   const handleBookAppointment = (doctor: Doctor) => {
+    // Check if patient already has a pending or confirmed appointment with this doctor
+    const existingAppointment = myAppointments.find(
+      apt => apt.doctor.id === doctor.id && (apt.status === 'PENDING' || apt.status === 'CONFIRMED')
+    );
+
+    if (existingAppointment) {
+      toast.error(
+        `You already have a ${existingAppointment.status.toLowerCase()} appointment with Dr. ${doctor.name}. Please wait for it to be completed before booking another one.`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
     setSelectedDoctor(doctor);
     setShowBookingModal(true);
   };
@@ -153,6 +197,34 @@ const FindDoctor: React.FC = () => {
     }
   };
 
+  const handleDeleteAppointment = async (appointmentId: string) => {
+    if (!confirm('Are you sure you want to delete this appointment record?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:3001/api/appointments/${appointmentId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete appointment');
+      }
+
+      toast.success('Appointment deleted successfully');
+      fetchMyAppointments();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete appointment';
+      toast.error(message);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -177,19 +249,21 @@ const FindDoctor: React.FC = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar>
+                      <Avatar className="h-16 w-16">
                         <AvatarImage
-                          src={`https://ui-avatars.com/api/?name=${doctor.name.replace(
-                            ' ',
-                            '+'
-                          )}&background=random`}
+                          src={doctor.profile?.profilePicture
+                            ? `http://localhost:3001/${doctor.profile.profilePicture}`
+                            : `https://ui-avatars.com/api/?name=${doctor.name.replace(' ', '+')}&background=random`}
                           alt={doctor.name}
                         />
                         <AvatarFallback>{doctor.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <CardTitle className="text-lg">Dr. {doctor.name}</CardTitle>
+                        {doctor.profile?.qualification && (
+                          <p className="text-sm text-gray-600 mt-1">{doctor.profile.qualification}</p>
+                        )}
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
                           <Stethoscope className="h-4 w-4" />
                           <span>Medical Professional</span>
                         </div>
@@ -198,6 +272,30 @@ const FindDoctor: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {doctor.profile?.specialties && doctor.profile.specialties.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-gray-500 mb-2">Specialties:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {doctor.profile.specialties.slice(0, 3).map((specialty, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-healthcare-100 text-healthcare-700 rounded-full text-xs">
+                            {specialty}
+                          </span>
+                        ))}
+                        {doctor.profile.specialties.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                            +{doctor.profile.specialties.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {doctor.profile?.about && (
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-700 line-clamp-2">{doctor.profile.about}</p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
                     <Mail className="h-4 w-4" />
                     {doctor.email}
@@ -243,15 +341,14 @@ const FindDoctor: React.FC = () => {
                         </p>
                       )}
                       <span
-                        className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                          appointment.status === 'CONFIRMED'
-                            ? 'bg-green-100 text-green-800'
-                            : appointment.status === 'PENDING'
+                        className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${appointment.status === 'CONFIRMED'
+                          ? 'bg-green-100 text-green-800'
+                          : appointment.status === 'PENDING'
                             ? 'bg-yellow-100 text-yellow-800'
                             : appointment.status === 'COMPLETED'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
                       >
                         {appointment.status}
                       </span>
@@ -265,6 +362,17 @@ const FindDoctor: React.FC = () => {
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Cancel
+                      </Button>
+                    )}
+                    {appointment.status === 'COMPLETED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteAppointment(appointment.id)}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
                       </Button>
                     )}
                   </div>

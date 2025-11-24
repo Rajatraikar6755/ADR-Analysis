@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,15 @@ interface PatientDetails {
   createdAt: string;
 }
 
+interface MedicalDocument {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  path: string;
+  uploadDate: string;
+}
+
 export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
   open,
   onOpenChange,
@@ -43,26 +52,26 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
   const { user } = useAuth();
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [details, setDetails] = useState<PatientDetails | null>(null);
+  const [documents, setDocuments] = useState<MedicalDocument[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open && patientId) {
-      fetchPatientProfile();
-    }
-  }, [open, patientId]);
-
-  const fetchPatientProfile = async () => {
+  const fetchPatientProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      
+      const token = localStorage.getItem('token');
+
       // Fetch profile
       const profileRes = await fetch(`/api/appointments/patient/${patientId}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Fetch details
       const detailsRes = await fetch(`/api/appointments/patient/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Fetch documents
+      const docsRes = await fetch(`/api/appointments/patient/${patientId}/documents`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -75,16 +84,43 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
         const detailsData = await detailsRes.json();
         setDetails(detailsData);
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load patient profile');
+
+      if (docsRes.ok) {
+        const docsData = await docsRes.json();
+        setDocuments(docsData);
+      } else {
+        const errorData = await docsRes.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch documents:', errorData);
+        toast.error(`Failed to fetch documents: ${errorData.error || docsRes.statusText}`);
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching patient profile:', error);
+      const message = error instanceof Error ? error.message : 'Failed to load patient profile';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [patientId]);
+
+  useEffect(() => {
+    if (open && patientId) {
+      fetchPatientProfile();
+    }
+  }, [open, patientId, fetchPatientProfile]);
+
+
 
   const formatDate = (date: string | undefined) => {
     if (!date) return 'Not provided';
     return new Date(date).toLocaleDateString();
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const parseJsonField = (field: string | undefined) => {
@@ -201,6 +237,44 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
                     <p className="text-gray-600">No allergies recorded</p>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Medical Documents */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Medical Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-white p-2 rounded border">
+                            <FileText className="h-5 w-5 text-healthcare-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{doc.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatFileSize(doc.size)} • {formatDate(doc.uploadDate)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={`http://localhost:3001/${doc.path}`} target="_blank" rel="noopener noreferrer">
+                            View
+                          </a>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No documents uploaded</p>
+                )}
               </CardContent>
             </Card>
 

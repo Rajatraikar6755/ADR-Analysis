@@ -43,6 +43,29 @@ router.post('/book', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Doctor not found' });
     }
 
+    // Check for existing pending or confirmed appointments with this doctor
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        patientId,
+        doctorId,
+        status: {
+          in: ['PENDING', 'CONFIRMED']
+        }
+      }
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        error: 'You already have a pending or confirmed appointment with this doctor. Please wait for it to be completed before booking another one.',
+        existingAppointment: {
+          id: existingAppointment.id,
+          status: existingAppointment.status,
+          date: existingAppointment.appointmentDate,
+          time: existingAppointment.appointmentTime
+        }
+      });
+    }
+
     // Create appointment
     const appointment = await prisma.appointment.create({
       data: {
@@ -85,7 +108,10 @@ router.get('/doctor/appointments', authenticateToken, async (req, res) => {
     }
 
     const appointments = await prisma.appointment.findMany({
-      where: { doctorId },
+      where: {
+        doctorId,
+        doctorDeleted: false
+      },
       include: {
         patient: {
           select: { id: true, name: true, email: true },
@@ -107,7 +133,10 @@ router.get('/patient/appointments', authenticateToken, async (req, res) => {
     const patientId = req.user.id;
 
     const appointments = await prisma.appointment.findMany({
-      where: { patientId },
+      where: {
+        patientId,
+        patientDeleted: false
+      },
       include: {
         doctor: {
           select: { id: true, name: true, email: true },
@@ -150,7 +179,7 @@ router.post('/health-profile', authenticateToken, async (req, res) => {
     console.log('Health profile endpoint hit');
     console.log('User:', req.user);
     console.log('Body:', req.body);
-    
+
     const userId = req.user.id;
     const {
       dob,
@@ -166,7 +195,7 @@ router.post('/health-profile', authenticateToken, async (req, res) => {
     const profileData = {
       userId,
     };
-    
+
     if (dob) profileData.dob = new Date(dob);
     if (gender) profileData.gender = gender;
     if (bloodType) profileData.bloodType = bloodType;
@@ -196,7 +225,7 @@ router.post('/health-profile', authenticateToken, async (req, res) => {
       if (allergies) updateData.allergies = allergies;
       if (emergencyContactName) updateData.emergencyContactName = emergencyContactName;
       if (emergencyContactPhone) updateData.emergencyContactPhone = emergencyContactPhone;
-      
+
       profile = await prisma.healthProfile.update({
         where: { userId },
         data: updateData,
@@ -293,6 +322,290 @@ router.put('/:appointmentId/status', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error updating appointment:', error);
     res.status(500).json({ error: 'Failed to update appointment' });
+  }
+});
+
+// POST request reschedule (patient only)
+router.post('/:appointmentId/reschedule', authenticateToken, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { date, time, reason } = req.body;
+    const patientId = req.user.id;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (appointment.patientId !== patientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        rescheduleDate: new Date(date),
+        rescheduleTime: time,
+        rescheduleReason: reason,
+        rescheduleStatus: 'PENDING',
+      },
+    });
+
+    res.json({
+      message: 'Reschedule request sent',
+      appointment: updated,
+    });
+  } catch (error) {
+    console.error('Error requesting reschedule:', error);
+    res.status(500).json({ error: 'Failed to request reschedule' });
+  }
+});
+
+// PUT reschedule action (doctor only)
+router.put('/:appointmentId/reschedule-action', authenticateToken, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { action } = req.body; // 'APPROVE' or 'REJECT'
+    const doctorId = req.user.id;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (appointment.doctorId !== doctorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    let updateData = {};
+    if (action === 'APPROVE') {
+      updateData = {
+        appointmentDate: appointment.rescheduleDate,
+        appointmentTime: appointment.rescheduleTime,
+        rescheduleStatus: 'APPROVED',
+      };
+    } else if (action === 'REJECT') {
+      updateData = {
+        rescheduleStatus: 'REJECTED',
+      };
+    } else {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: updateData,
+    });
+
+
+
+    res.json({
+      message: `Reschedule request ${action.toLowerCase()}d`,
+      appointment: updated,
+    });
+  } catch (error) {
+    console.error('Error processing reschedule:', error);
+    res.status(500).json({ error: 'Failed to process reschedule' });
+  }
+});
+
+// GET patient assessments (doctor only)
+router.get('/patient/:patientId/assessments', authenticateToken, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+
+    // Verify doctor
+    const doctor = await prisma.user.findUnique({ where: { id: doctorId } });
+    if (doctor.role !== 'DOCTOR') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const assessments = await prisma.assessment.findMany({
+      where: { userId: patientId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(assessments);
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ error: 'Failed to fetch assessments' });
+  }
+});
+
+// GET patient medical documents (doctor only)
+router.get('/patient/:patientId/documents', authenticateToken, async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const doctorId = req.user.id;
+
+    console.log('[Documents] Request from doctor:', doctorId, 'for patient:', patientId);
+
+    // Verify doctor
+    const doctor = await prisma.user.findUnique({ where: { id: doctorId } });
+    console.log('[Documents] Doctor found:', doctor ? `${doctor.name} (${doctor.role})` : 'NOT FOUND');
+
+    if (!doctor) {
+      console.log('[Documents] ERROR: Doctor not found in database');
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+
+    if (doctor.role !== 'DOCTOR') {
+      console.log('[Documents] ERROR: User is not a doctor, role:', doctor.role);
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const documents = await prisma.medicalDocument.findMany({
+      where: { userId: patientId },
+      orderBy: { uploadDate: 'desc' },
+    });
+
+    console.log('[Documents] Found', documents.length, 'documents for patient', patientId);
+    res.json(documents);
+  } catch (error) {
+    console.error('[Documents] Error fetching documents:', error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+// PUT update appointment notes (doctor only)
+router.put('/:appointmentId/notes', authenticateToken, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { notes } = req.body;
+    const doctorId = req.user.id;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (appointment.doctorId !== doctorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { notes },
+    });
+
+    res.json({
+      message: 'Notes updated successfully',
+      appointment: updated,
+    });
+  } catch (error) {
+    console.error('Error updating notes:', error);
+    res.status(500).json({ error: 'Failed to update notes' });
+  }
+});
+
+// PUT complete appointment (doctor only)
+router.put('/:appointmentId/complete', authenticateToken, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const doctorId = req.user.id;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (appointment.doctorId !== doctorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Verify appointment has had a video call
+    if (!appointment.hasHadVideoCall) {
+      return res.status(400).json({
+        error: 'Cannot complete appointment without a video call'
+      });
+    }
+
+    // Verify call duration was at least 30 seconds
+    if (!appointment.callDuration || appointment.callDuration < 30) {
+      return res.status(400).json({
+        error: 'Video call must be at least 30 seconds to complete appointment',
+        currentDuration: appointment.callDuration || 0
+      });
+    }
+
+    // Update appointment to completed
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'COMPLETED' },
+      include: {
+        patient: {
+          select: { id: true, name: true, email: true },
+        },
+        doctor: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    res.json({
+      message: 'Appointment completed successfully',
+      appointment: updated,
+    });
+  } catch (error) {
+    console.error('Error completing appointment:', error);
+    res.status(500).json({ error: 'Failed to complete appointment' });
+  }
+});
+
+// DELETE appointment (completed only)
+router.delete('/:appointmentId', authenticateToken, async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const userId = req.user.id;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Verify ownership (either doctor or patient)
+    if (appointment.doctorId !== userId && appointment.patientId !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Verify status is COMPLETED
+    if (appointment.status !== 'COMPLETED') {
+      return res.status(400).json({ error: 'Only completed appointments can be deleted' });
+    }
+
+    // Soft delete based on user role
+    const updateData = {};
+    if (userId === appointment.doctorId) {
+      updateData.doctorDeleted = true;
+    } else if (userId === appointment.patientId) {
+      updateData.patientDeleted = true;
+    }
+
+    await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: updateData,
+    });
+
+    res.json({ message: 'Appointment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting appointment:', error);
+    res.status(500).json({ error: 'Failed to delete appointment' });
   }
 });
 

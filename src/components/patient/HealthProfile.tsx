@@ -23,6 +23,7 @@ interface ProfileData {
 }
 
 interface MedicalDocument {
+  id: string;
   name: string;
   size: number;
   uploadDate: string;
@@ -49,12 +50,13 @@ const HealthProfile: React.FC = () => {
         const token = localStorage.getItem('token');
         // Get the current user's ID from the auth context
         const userId = user?.id;
-        
+
         if (!userId) {
           console.error('User ID not available');
           return;
         }
 
+        // Fetch profile
         const res = await fetch(`/api/appointments/patient/${userId}/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -71,37 +73,31 @@ const HealthProfile: React.FC = () => {
             emergencyContactName: data.emergencyContactName || '',
             emergencyContactPhone: data.emergencyContactPhone || '',
           }));
-        } else if (res.status === 404) {
-          // Profile doesn't exist yet, load from localStorage
-          const savedProfile = localStorage.getItem('healthProfile');
-          if (savedProfile) {
-            setProfile(JSON.parse(savedProfile));
-          }
         }
+
+        // Fetch documents
+        const docsRes = await fetch('/api/documents', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          setDocuments(docsData);
+        }
+
       } catch (error) {
-        console.error('Error loading profile:', error);
-        // Fall back to localStorage
-        const savedProfile = localStorage.getItem('healthProfile');
-        if (savedProfile) {
-          setProfile(JSON.parse(savedProfile));
-        }
+        console.error('Error loading data:', error);
       }
     };
 
     loadProfile();
-
-    // Load documents from localStorage
-    const savedDocs = localStorage.getItem('medicalDocuments');
-    if (savedDocs) {
-      setDocuments(JSON.parse(savedDocs));
-    }
-  }, []);
+  }, [user]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSelectChange = (name: keyof ProfileData, value: string) => {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
@@ -109,33 +105,11 @@ const HealthProfile: React.FC = () => {
   const handleSaveProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Check if token exists
+
       if (!token) {
         toast.error('Session expired. Please log in again.');
         return;
       }
-
-      // Validate that we have required data
-      if (!profile.dob && !profile.gender && !profile.bloodType && 
-          !profile.conditions && !profile.allergies && 
-          !profile.emergencyContactName && !profile.emergencyContactPhone) {
-        toast.error('Please fill in at least one health profile field');
-        return;
-      }
-
-      // Save to backend
-      console.log('Sending health profile to:', '/api/appointments/health-profile');
-      console.log('Profile data:', {
-        dob: profile.dob || null,
-        gender: profile.gender || null,
-        bloodType: profile.bloodType || null,
-        conditions: profile.conditions || null,
-        allergies: profile.allergies || null,
-        emergencyContactName: profile.emergencyContactName || null,
-        emergencyContactPhone: profile.emergencyContactPhone || null,
-      });
-      console.log('Token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
 
       const res = await fetch('/api/appointments/health-profile', {
         method: 'POST',
@@ -154,62 +128,66 @@ const HealthProfile: React.FC = () => {
         }),
       });
 
-      console.log('Response status:', res.status);
-      console.log('Response headers:', res.headers);
-
       if (res.ok) {
-        const data = await res.json();
-        console.log('Profile saved:', data);
-        // Also save to localStorage for local access
-        localStorage.setItem('healthProfile', JSON.stringify(profile));
         toast.success('Health profile saved successfully!');
       } else {
-        const contentType = res.headers.get('content-type');
-        let errorMessage = 'Failed to save profile';
-        
-        try {
-          if (contentType && contentType.includes('application/json')) {
-            const error = await res.json();
-            console.error('API Error:', error);
-            errorMessage = error.error || errorMessage;
-          } else {
-            const text = await res.text();
-            console.error('Server error:', text);
-            errorMessage = `Server error (${res.status}): ${text.substring(0, 100)}`;
-          }
-        } catch (parseError) {
-          console.error('Error parsing response:', parseError);
-          errorMessage = `Server error (${res.status})`;
-        }
-        
-        toast.error(errorMessage);
+        toast.error('Failed to save profile');
       }
     } catch (error: any) {
-      console.error('Network error:', error);
-      toast.error(error.message || 'Network error while saving profile');
+      toast.error('Network error while saving profile');
     }
   };
-  
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const newDoc: MedicalDocument = {
-        name: file.name,
-        size: file.size,
-        uploadDate: new Date().toISOString()
-      };
-      const updatedDocs = [...documents, newDoc];
-      setDocuments(updatedDocs);
-      localStorage.setItem('medicalDocuments', JSON.stringify(updatedDocs));
-      toast.success(`${file.name} uploaded and saved.`);
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('document', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/documents/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        const newDoc = await res.json();
+        setDocuments(prev => [newDoc, ...prev]);
+        toast.success(`${file.name} uploaded successfully.`);
+      } else {
+        toast.error('Failed to upload document');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Error uploading document');
     }
   };
-  
-  const deleteDocument = (docName: string) => {
-    const updatedDocs = documents.filter(doc => doc.name !== docName);
-    setDocuments(updatedDocs);
-    localStorage.setItem('medicalDocuments', JSON.stringify(updatedDocs));
-    toast.info(`${docName} has been removed.`);
+
+  const deleteDocument = async (docId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/documents/${docId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setDocuments(prev => prev.filter(doc => doc.id !== docId));
+        toast.info('Document removed.');
+      } else {
+        toast.error('Failed to delete document');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting document');
+    }
   };
 
   return (
@@ -255,12 +233,12 @@ const HealthProfile: React.FC = () => {
           <div className="space-y-2">
             <Label>Blood Type</Label>
             <Select name="bloodType" value={profile.bloodType} onValueChange={(val) => handleSelectChange('bloodType', val)}>
-                <SelectTrigger><SelectValue placeholder="Select blood type" /></SelectTrigger>
-                <SelectContent>
-                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                </SelectContent>
+              <SelectTrigger><SelectValue placeholder="Select blood type" /></SelectTrigger>
+              <SelectContent>
+                {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </CardContent>
@@ -273,17 +251,17 @@ const HealthProfile: React.FC = () => {
           </Reveal>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div>
-                <Label htmlFor="conditions">Chronic Conditions</Label>
-                <Textarea id="conditions" name="conditions" placeholder="List any chronic conditions like diabetes, asthma..." value={profile.conditions} onChange={handleProfileChange}/>
-            </div>
-            <div>
-                <Label htmlFor="allergies">Allergies</Label>
-                <Textarea id="allergies" name="allergies" placeholder="List any known allergies to medication or food..." value={profile.allergies} onChange={handleProfileChange}/>
-            </div>
+          <div>
+            <Label htmlFor="conditions">Chronic Conditions</Label>
+            <Textarea id="conditions" name="conditions" placeholder="List any chronic conditions like diabetes, asthma..." value={profile.conditions} onChange={handleProfileChange} />
+          </div>
+          <div>
+            <Label htmlFor="allergies">Allergies</Label>
+            <Textarea id="allergies" name="allergies" placeholder="List any known allergies to medication or food..." value={profile.allergies} onChange={handleProfileChange} />
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card className="animate-zoom-in">
         <CardHeader>
           <Reveal>
@@ -291,17 +269,17 @@ const HealthProfile: React.FC = () => {
           </Reveal>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="emergencyContactName">Contact Name</Label>
-                <Input id="emergencyContactName" name="emergencyContactName" placeholder="e.g., Jane Doe" value={profile.emergencyContactName} onChange={handleProfileChange}/>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="emergencyContactPhone">Contact Phone</Label>
-                <Input id="emergencyContactPhone" name="emergencyContactPhone" type="tel" placeholder="e.g., +1 123-456-7890" value={profile.emergencyContactPhone} onChange={handleProfileChange}/>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactName">Contact Name</Label>
+            <Input id="emergencyContactName" name="emergencyContactName" placeholder="e.g., Jane Doe" value={profile.emergencyContactName} onChange={handleProfileChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactPhone">Contact Phone</Label>
+            <Input id="emergencyContactPhone" name="emergencyContactPhone" type="tel" placeholder="e.g., +1 123-456-7890" value={profile.emergencyContactPhone} onChange={handleProfileChange} />
+          </div>
         </CardContent>
       </Card>
-      
+
       <Card className="animate-zoom-in">
         <CardHeader>
           <Reveal>
@@ -313,22 +291,22 @@ const HealthProfile: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="border-2 border-dashed rounded-lg p-6 text-center mb-4 animate-slide-in-up">
-              <Input id="doc-upload" type="file" className="hidden" onChange={handleFileUpload} />
-              <Label htmlFor="doc-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                  <FileUp className="h-10 w-10 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-healthcare-600">Upload a new document</span>
-              </Label>
+            <Input id="doc-upload" type="file" className="hidden" onChange={handleFileUpload} />
+            <Label htmlFor="doc-upload" className="cursor-pointer flex flex-col items-center justify-center">
+              <FileUp className="h-10 w-10 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-healthcare-600">Upload a new document</span>
+            </Label>
           </div>
           <div className="space-y-2">
             {documents.length > 0 ? documents.map((doc, idx) => (
-              <motion.div key={doc.name} className="flex items-center justify-between p-2 bg-gray-50 rounded border hover:shadow-sm transition-shadow" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.04 * idx }}>
+              <motion.div key={doc.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border hover:shadow-sm transition-shadow" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.35, delay: 0.04 * idx }}>
                 <div>
                   <p className="font-medium">{doc.name}</p>
                   <p className="text-xs text-gray-500">
                     {(doc.size / 1024).toFixed(2)} KB - Uploaded on {new Date(doc.uploadDate).toLocaleDateString()}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => deleteDocument(doc.name)}>
+                <Button variant="ghost" size="icon" onClick={() => deleteDocument(doc.id)}>
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
               </motion.div>

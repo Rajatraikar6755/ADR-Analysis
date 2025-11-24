@@ -3,11 +3,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { 
-  LayoutDashboard, 
-  User, 
-  Calendar, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  User,
+  Calendar,
+  LogOut,
   MessageSquare,
   Heart,
   FileText,
@@ -70,68 +70,77 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main content with sidebar for authenticated users */}
       {user ? (
         <div className="flex flex-1 z-10 bg-gray-50/50 relative overflow-hidden">
-        
+
           {/* Sidebar */}
           <aside className="w-64 bg-white/40 backdrop-blur-lg border-r border-white/30 shadow-sm hidden md:block">
             <nav className="p-4 space-y-1">
               {isPatient && (
                 <>
-                  <Link 
-                    to="/patient-dashboard" 
+                  <Link
+                    to="/patient-dashboard"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     <span>Dashboard</span>
                   </Link>
-                  <Link 
-                    to="/health-profile" 
+                  <Link
+                    to="/health-profile"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <User className="h-5 w-5" />
                     <span>Health Profile</span>
                   </Link>
-                  <Link 
-                    to="/medication-check" 
+                  <Link
+                    to="/medication-check"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <FileText className="h-5 w-5" />
                     <span>Medication Check</span>
                   </Link>
-                  <Link 
-                    to="/ai-assistant" 
+                  <Link
+                    to="/ai-assistant"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <MessageSquare className="h-5 w-5" />
                     <span>AI Assistant</span>
+                  </Link>
+                  <Link
+                    to="/medical-assessments"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
+                  >
+                    <FileText className="h-5 w-5" />
+                    <span>Medical Assessments</span>
                   </Link>
                 </>
               )}
 
               {isDoctor && (
                 <>
-                  <Link 
-                    to="/doctor-dashboard" 
+                  <Link
+                    to="/doctor-dashboard"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <LayoutDashboard className="h-5 w-5" />
                     <span>Dashboard</span>
                   </Link>
-                  <Link 
-                    to="/doctor/patients" 
+                  <Link
+                    to="/doctor/profile"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <User className="h-5 w-5" />
-                    <span>Patient Management</span>
+                    <span>Profile</span>
                   </Link>
                 </>
               )}
 
-              <Link 
-                 to="/find-doctor" 
-                 className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
+              {!isDoctor && (
+                <Link
+                  to="/find-doctor"
+                  className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
                   <Calendar className="h-5 w-5" />
                   <span>Book Appointment</span>
-              </Link>
+                </Link>
+              )}
             </nav>
           </aside>
 
@@ -142,7 +151,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <Home className="h-5 w-5" />
                 <span className="text-xs mt-1">Home</span>
               </Link>
-              
+
               {isPatient ? (
                 <>
                   <Link to="/medication-check" className="flex flex-col items-center p-2">
@@ -160,11 +169,11 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <span className="text-xs mt-1">Patients</span>
                 </Link>
               )}
-              
-                <Link to="/find-doctor" className="flex flex-col items-center p-2">
-                  <Calendar className="h-5 w-5" />
+
+              <Link to="/find-doctor" className="flex flex-col items-center p-2">
+                <Calendar className="h-5 w-5" />
                 <span className="text-xs mt-1">Doctors</span>
-                </Link>
+              </Link>
             </div>
           </div>
 

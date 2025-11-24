@@ -6,7 +6,7 @@ const getToken = () => localStorage.getItem('token');
 // API request helper
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = getToken();
-  
+
   const headers: HeadersInit = {
     ...(options.headers || {}),
   };
@@ -99,9 +99,9 @@ export const aiAPI = {
 // Assessment API
 export const assessmentAPI = {
   assessRisk: async (
-    medications: any[],
+    medications: unknown[],
     conditions: string,
-    healthProfile: any,
+    healthProfile: Record<string, unknown>,
     document?: File
   ) => {
     const formData = new FormData();
