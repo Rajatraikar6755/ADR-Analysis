@@ -110,7 +110,10 @@ router.get('/doctor/appointments', authenticateToken, async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where: {
         doctorId,
-        doctorDeleted: false
+        doctorDeleted: false,
+        status: {
+          not: 'CANCELLED'
+        }
       },
       include: {
         patient: {
@@ -297,8 +300,16 @@ router.put('/:appointmentId/status', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Appointment not found' });
     }
 
+    // Check authorization
     if (appointment.doctorId !== doctorId) {
-      return res.status(403).json({ error: 'Not authorized' });
+      // If not the doctor, check if it's the patient cancelling
+      if (appointment.patientId === doctorId && status === 'CANCELLED') {
+        if (appointment.status !== 'PENDING') {
+          return res.status(400).json({ error: 'You can only cancel pending appointments' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Not authorized' });
+      }
     }
 
     // Update appointment
@@ -584,9 +595,9 @@ router.delete('/:appointmentId', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    // Verify status is COMPLETED
-    if (appointment.status !== 'COMPLETED') {
-      return res.status(400).json({ error: 'Only completed appointments can be deleted' });
+    // Verify status is COMPLETED or CANCELLED
+    if (appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED') {
+      return res.status(400).json({ error: 'Only completed or cancelled appointments can be deleted' });
     }
 
     // Soft delete based on user role

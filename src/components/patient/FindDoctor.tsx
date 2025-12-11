@@ -364,7 +364,7 @@ const FindDoctor: React.FC = () => {
                         Cancel
                       </Button>
                     )}
-                    {appointment.status === 'COMPLETED' && (
+                    {(appointment.status === 'COMPLETED' || appointment.status === 'CANCELLED') && (
                       <Button
                         variant="outline"
                         size="sm"

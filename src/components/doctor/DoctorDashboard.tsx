@@ -506,11 +506,14 @@ const DoctorDashboard: React.FC = () => {
   });
 
   const filteredAppointments = appointments.filter(appointment => {
+    if (statusFilter === 'PENDING') {
+      return appointment.status === 'PENDING' || appointment.rescheduleStatus === 'PENDING';
+    }
     const matchesStatus = statusFilter ? appointment.status === statusFilter : true;
     return matchesStatus;
   });
 
-  const pendingCount = appointments.filter(a => a.status === 'PENDING').length;
+  const pendingCount = appointments.filter(a => a.status === 'PENDING' || a.rescheduleStatus === 'PENDING').length;
   const confirmedCount = appointments.filter(a => a.status === 'CONFIRMED').length;
   const todayAppointmentsCount = appointments.filter(a =>
     a.status === 'CONFIRMED' &&
