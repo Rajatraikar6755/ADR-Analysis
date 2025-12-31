@@ -7,14 +7,14 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: "PATIENT" | "DOCTOR";
+  role: "PATIENT" | "DOCTOR" | "ADMIN";
 };
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: "patient" | "doctor") => Promise<{ needsVerification: boolean; email: string }>;
+  register: (name: string, email: string, password: string, role: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => Promise<{ needsVerification: boolean; email: string }>;
   verifyOTP: (email: string, otp: string) => Promise<void>;
   resendOTP: (email: string) => Promise<void>;
   logout: () => void;
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    
+
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -43,12 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Register function
-  const register = async (name: string, email: string, password: string, role: "patient" | "doctor") => {
+  const register = async (name: string, email: string, password: string, role: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await authAPI.register(name, email, password, role);
+      const response = await authAPI.register(name, email, password, role, licenseNumber, licenseDocument);
       toast.success(response.message);
       return { needsVerification: true, email: response.email };
     } catch (err) {
@@ -65,20 +65,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyOTP = async (email: string, otp: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await authAPI.verifyOTP(email, otp);
-      
+
       // Store token and user
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
-      
+
       toast.success(response.message);
-      
+
       // Redirect based on role
       if (response.user.role === "PATIENT") {
         navigate("/patient-dashboard");
+      } else if (response.user.role === "ADMIN") {
+        navigate("/admin");
       } else {
         navigate("/doctor-dashboard");
       }
@@ -96,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resendOTP = async (email: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await authAPI.resendOTP(email);
       toast.success(response.message);
@@ -114,27 +116,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await authAPI.login(email, password);
-      
+
       // Store token and user
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
-      
+
       toast.success(response.message);
-      
+
       // Redirect based on role
       if (response.user.role === "PATIENT") {
         navigate("/patient-dashboard");
+      } else if (response.user.role === "ADMIN") {
+        navigate("/admin");
       } else {
         navigate("/doctor-dashboard");
       }
     } catch (err: any) {
       const message = err.message || "Login failed";
       setError(message);
-      
+
       // Handle email not verified case
       if (err.needsVerification) {
         toast.error("Please verify your email first");
@@ -161,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const forgotPassword = async (email: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await authAPI.forgotPassword(email);
       toast.success(response.message);
@@ -179,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (token: string, newPassword: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await authAPI.resetPassword(token, newPassword);
       toast.success(response.message);
@@ -195,9 +199,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isLoading, 
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
       login,
       register,
       verifyOTP,

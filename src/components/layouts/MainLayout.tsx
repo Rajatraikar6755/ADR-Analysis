@@ -20,6 +20,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const isPatient = user?.role === 'PATIENT';
   const isDoctor = user?.role === 'DOCTOR';
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -133,7 +134,19 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </>
               )}
 
-              {!isDoctor && (
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                </>
+              )}
+
+              {isPatient && (
                 <Link
                   to="/find-doctor"
                   className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">

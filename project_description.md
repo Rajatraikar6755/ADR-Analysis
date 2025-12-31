@@ -34,7 +34,7 @@ The provider dashboard is a triage and management tool designed to streamline cl
 The project is built on a robust, scalable, and modern technology stack:
 
 *   **Frontend:** Built with **React.js** and **Tailwind CSS**, ensuring a responsive, accessible, and aesthetically pleasing user interface. It utilizes the **Context API** for efficient state management across the complex dashboard.
-*   **Backend:** Powered by **FastAPI (Python)**. This choice was critical for handling the asynchronous nature of AI inference and real-time data processing. It provides high-performance REST endpoints and automatic documentation.
+*   **Backend:** Powered by **Express/Node.js**. This choice was critical for handling the asynchronous nature of AI inference and real-time data processing. It provides high-performance REST endpoints and integrates seamlessly with Socket.io.
 *   **Database:** A hybrid approach using **PostgreSQL** (via Prisma ORM) for structured relational data (users, appointments, assessments) and a Vector Store for the AI knowledge base.
 *   **Security:** Implementation of **JWT (JSON Web Tokens)** ensures secure, stateless authentication. Role-Based Access Control (RBAC) strictly separates patient and doctor data privileges, adhering to privacy standards.
 *   **Real-Time Communication:** Integration of **Socket.io** and **WebRTC** facilitates instant messaging and secure video consultations between doctors and patients.

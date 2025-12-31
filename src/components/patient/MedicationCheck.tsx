@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FilePlus, X, Pill, HeartPulse, Dumbbell, Stethoscope } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { AssessmentSkeleton } from '@/components/AssessmentSkeleton';
 import { toast } from '@/components/ui/sonner';
 import Reveal from '@/components/ui/Reveal';
 import { motion } from 'framer-motion';
@@ -308,6 +309,8 @@ const MedicationCheck: React.FC = () => {
             </Button>
           </div>
         </form>
+      ) : isAssessing ? (
+        <AssessmentSkeleton />
       ) : (
         <div className="space-y-6">
           <Card className="animate-zoom-in">

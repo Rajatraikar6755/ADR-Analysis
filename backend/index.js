@@ -11,7 +11,13 @@ const messageRoutes = require('./routes/messages');
 const documentRoutes = require('./routes/documents');
 const doctorRoutes = require('./routes/doctor');
 const assessmentRoutes = require('./routes/assessments');
+const adminRoutes = require('./routes/admin');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const logger = require('./utils/logger');
 const { initializeSocketServer } = require('./socket-server');
+const { performOCR } = require('./utils/ocr');
+const { searchKnowledgeBase } = require('./utils/knowledgeBase');
 
 let fetch;
 
@@ -33,14 +39,35 @@ const startServer = async () => {
   const app = express();
   const port = 3001;
 
+  app.use(helmet({
+    crossOriginResourcePolicy: false,
+  }));
   app.use(cors());
   app.use(express.json());
+
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { error: 'Too many requests, please try again later.' }
+  });
+  app.use('/api/', limiter);
+
+  // Specific limiter for AI and Auth
+  const aiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20,
+    message: { error: 'AI request limit reached. Please try again in an hour.' }
+  });
+  app.use('/api/ai-assistant', aiLimiter);
+  app.use('/api/assess-risk', aiLimiter);
 
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/v1/chat/completions";
 
   // ========== AUTH ROUTES (NO AUTH REQUIRED) ==========
   app.use('/api/auth', authRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // ========== APPOINTMENT ROUTES ==========
   app.use('/api/appointments', appointmentRoutes);
@@ -128,8 +155,18 @@ const startServer = async () => {
       }
       const documentFile = req.file;
       let documentText = 'No document provided.';
+      let extractedText = '';
+
       if (documentFile) {
-        documentText = `An uploaded document named ${documentFile.originalname} is also available for context.`;
+        logger.info(`Processing document for OCR: ${documentFile.originalname}`);
+        try {
+          extractedText = await performOCR(documentFile.buffer);
+          documentText = `An uploaded document named ${documentFile.originalname} was processed. Extracted content: ${extractedText.substring(0, 500)}...`;
+          logger.info('OCR processing successful');
+        } catch (ocrError) {
+          logger.error('OCR Error:', ocrError);
+          documentText = `An uploaded document named ${documentFile.originalname} is available, but OCR processing failed.`;
+        }
       }
 
       const systemPrompt = `
@@ -173,13 +210,21 @@ const startServer = async () => {
             **MANDATORY REQUIREMENT:** You MUST provide at least one Ayurvedic alternative for each medication analyzed. If you cannot find a specific Ayurvedic alternative, suggest general Ayurvedic herbs that support the body system affected by the medication.
         `;
 
+      let localContext = '';
+      for (const med of medications) {
+        localContext += searchKnowledgeBase(med.name);
+      }
+
       const userPrompt = `
           Please analyze the following data and provide comprehensive alternative suggestions including both modern pharmaceutical and Ayurvedic alternatives.
 
           **1. Real-World Data from FDA Adverse Event Reporting System (FAERS):**
           ${fdaData || "No specific adverse event data was found for the provided medications. Please proceed with your general knowledge."}
 
-          **2. Patient Health Profile:**
+          **2. Local Clinical Knowledge Base Context:**
+          ${localContext || "No specific local clinical data found for these medications."}
+
+          **3. Patient Health Profile:**
           ${JSON.stringify(healthProfile)}
 
           **3. Current Medications for this Analysis:**
@@ -294,9 +339,9 @@ const startServer = async () => {
   const io = initializeSocketServer(httpServer);
 
   httpServer.listen(port, () => {
-    console.log(`✅ Backend server running on http://localhost:${port}`);
-    console.log(`📧 SMTP configured: ${process.env.SMTP_HOST}`);
-    console.log(`🔐 JWT secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
+    logger.info(`✅ Backend server running on http://localhost:${port}`);
+    logger.info(`📧 SMTP configured: ${process.env.SMTP_HOST}`);
+    logger.info(`🔐 JWT secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
   });
 };
 

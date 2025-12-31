@@ -39,6 +39,13 @@ model User {
 enum Role {
   PATIENT
   DOCTOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // Doctor Profile
@@ -51,6 +58,11 @@ model DoctorProfile {
   specialties    String[] // Array of strings
   about          String?  @db.Text
   profilePicture String?
+  
+  // Verification fields
+  licenseNumber  String?
+  licenseDocument String? // File path
+  verificationStatus VerificationStatus @default(PENDING)
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

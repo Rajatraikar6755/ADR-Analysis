@@ -15,6 +15,8 @@ const RegisterForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [licenseDocument, setLicenseDocument] = useState<File | null>(null);
   const [passwordError, setPasswordError] = useState('');
   const { register, isLoading, error } = useAuth();
   const navigate = useNavigate();
@@ -22,27 +24,32 @@ const RegisterForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
-    
+
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       return;
     }
-    
+
     if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       return;
     }
-    try {
-    const result = await register(name, email, password, role);
-    
-    // Redirect to OTP verification
-    if (result.needsVerification) {
-      navigate(`/verify-otp?email=${result.email}`);
+
+    if (role === 'doctor' && !licenseDocument) {
+      setPasswordError('Verification document is required for doctors');
+      return;
     }
-  } catch (err) {
-    // Error handled in context
-  }
-    
+
+    try {
+      const result = await register(name, email, password, role, licenseNumber, licenseDocument || undefined);
+
+      // Redirect to OTP verification
+      if (result.needsVerification) {
+        navigate(`/verify-otp?email=${result.email}`);
+      }
+    } catch (err) {
+      // Error handled in context
+    }
   };
 
   return (
@@ -72,7 +79,7 @@ const RegisterForm: React.FC = () => {
                 className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -85,7 +92,7 @@ const RegisterForm: React.FC = () => {
                 className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -98,7 +105,7 @@ const RegisterForm: React.FC = () => {
                 className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
@@ -111,7 +118,7 @@ const RegisterForm: React.FC = () => {
                 className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
               />
             </div>
-            
+
             {passwordError && (
               <div className="text-sm text-red-300 bg-red-900/50 p-2 rounded">{passwordError}</div>
             )}
@@ -129,6 +136,38 @@ const RegisterForm: React.FC = () => {
                 </div>
               </RadioGroup>
             </div>
+
+            {role === 'doctor' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-4 pt-2"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="licenseNumber">Medical License Number</Label>
+                  <Input
+                    id="licenseNumber"
+                    placeholder="MC-123456"
+                    value={licenseNumber}
+                    onChange={(e) => setLicenseNumber(e.target.value)}
+                    required
+                    className="bg-white/50 border-none placeholder:text-gray-600 focus:ring-2 focus:ring-vibrantBlue"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="licenseDocument">Verification Document (PDF or Image)</Label>
+                  <Input
+                    id="licenseDocument"
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setLicenseDocument(e.target.files?.[0] || null)}
+                    required
+                    className="bg-white/50 border-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-vibrantBlue file:text-white hover:file:bg-vibrantBlue-light cursor-pointer"
+                  />
+                  <p className="text-xs text-black/60">Upload your ID card or medical certificate for verification.</p>
+                </div>
+              </motion.div>
+            )}
 
             {error && (
               <div className="text-sm text-red-300 bg-red-900/50 p-2 rounded">{error}</div>

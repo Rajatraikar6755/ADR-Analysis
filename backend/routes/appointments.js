@@ -5,11 +5,16 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// GET all doctors
+// GET all doctors (only approved ones)
 router.get('/doctors', async (req, res) => {
   try {
     const doctors = await prisma.user.findMany({
-      where: { role: 'DOCTOR' },
+      where: {
+        role: 'DOCTOR',
+        doctorProfile: {
+          verificationStatus: 'APPROVED'
+        }
+      },
       select: {
         id: true,
         name: true,
@@ -34,13 +39,18 @@ router.post('/book', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verify doctor exists
+    // Verify doctor exists and is approved
     const doctor = await prisma.user.findUnique({
       where: { id: doctorId },
+      include: { doctorProfile: true }
     });
 
     if (!doctor || doctor.role !== 'DOCTOR') {
       return res.status(404).json({ error: 'Doctor not found' });
+    }
+
+    if (doctor.doctorProfile?.verificationStatus !== 'APPROVED') {
+      return res.status(403).json({ error: 'This doctor is not yet verified and cannot accept appointments.' });
     }
 
     // Check for existing pending or confirmed appointments with this doctor

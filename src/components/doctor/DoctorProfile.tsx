@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, Save } from 'lucide-react';
+import { Loader2, Upload, X, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const AVAILABLE_SPECIALTIES = [
@@ -28,10 +28,57 @@ const DoctorProfile: React.FC = () => {
         qualification: '',
         specialties: [] as string[],
         about: '',
-        profilePicture: ''
+        profilePicture: '',
+        verificationStatus: 'PENDING',
+        licenseNumber: '',
+        licenseDocument: ''
     });
 
+    const [selectedVerifyFile, setSelectedVerifyFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleVerificationUpload = async () => {
+        if (!selectedVerifyFile) {
+            toast.error('Please select a document');
+            return;
+        }
+        if (!profile.licenseNumber) {
+            toast.error('Please enter your license number first');
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            const formData = new FormData();
+            formData.append('document', selectedVerifyFile);
+            formData.append('licenseNumber', profile.licenseNumber);
+
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3001/api/doctors/verify', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                toast.success(data.message);
+                setProfile(prev => ({
+                    ...prev,
+                    verificationStatus: 'PENDING',
+                    licenseDocument: data.licenseDocument || prev.licenseDocument
+                }));
+                setSelectedVerifyFile(null);
+            } else {
+                toast.error(data.error || 'Upload failed');
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            toast.error('Failed to upload document');
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     useEffect(() => {
         fetchProfile();
@@ -50,7 +97,10 @@ const DoctorProfile: React.FC = () => {
                     qualification: data.qualification || '',
                     specialties: data.specialties || [],
                     about: data.about || '',
-                    profilePicture: data.profilePicture || ''
+                    profilePicture: data.profilePicture || '',
+                    verificationStatus: data.verificationStatus || 'PENDING',
+                    licenseNumber: data.licenseNumber || '',
+                    licenseDocument: data.licenseDocument || ''
                 });
             }
         } catch (error) {
@@ -142,6 +192,82 @@ const DoctorProfile: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900">Doctor Profile</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Verification Status Card */}
+                <Card className="md:col-span-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <span>Verification Status</span>
+                            <Badge className={`
+                                ${profile.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                    profile.verificationStatus === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                        'bg-yellow-100 text-yellow-800'}
+                            `}>
+                                {profile.verificationStatus}
+                            </Badge>
+                        </CardTitle>
+                        <CardDescription>
+                            Your account must be verified by an admin to be visible to patients.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {profile.verificationStatus !== 'APPROVED' && (
+                            <div className="bg-blue-50 border border-blue-100 p-4 rounded-md space-y-4">
+                                <p className="text-sm text-blue-800 font-medium">
+                                    {profile.verificationStatus === 'REJECTED'
+                                        ? 'Your previous verification was rejected. Please re-upload your credentials.'
+                                        : 'Please provide your medical license details for verification.'}
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="licenseNumber">Medical License Number</Label>
+                                        <Input
+                                            id="licenseNumber"
+                                            placeholder="Enter your license number"
+                                            value={profile.licenseNumber}
+                                            onChange={(e) => setProfile(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="licenseDoc">Verification Document (Certificate/ID)</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="licenseDoc"
+                                                type="file"
+                                                className="cursor-pointer"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                onChange={(e) => setSelectedVerifyFile(e.target.files?.[0] || null)}
+                                            />
+                                            <Button
+                                                onClick={handleVerificationUpload}
+                                                disabled={isUploading || !selectedVerifyFile}
+                                                className="bg-vibrantBlue hover:bg-vibrantBlue/90"
+                                            >
+                                                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Upload'}
+                                            </Button>
+                                        </div>
+                                        {selectedVerifyFile && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Selected: {selectedVerifyFile.name}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {profile.verificationStatus === 'APPROVED' && (
+                            <div className="flex items-center gap-2 text-green-700">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="font-medium">Your profile is verified and active.</span>
+                            </div>
+                        )}
+                        {profile.licenseDocument && (
+                            <div className="text-sm text-gray-500">
+                                Current Document: <span className="font-mono">{profile.licenseDocument.split('/').pop()}</span>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Profile Picture Card */}
                 <Card className="md:col-span-1">
                     <CardHeader>

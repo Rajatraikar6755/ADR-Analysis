@@ -25,6 +25,23 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Configure storage for verification documents
+const verificationStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../uploads/verification');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'verify-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const uploadVerification = multer({ storage: verificationStorage });
+
 // GET current doctor profile
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
@@ -138,6 +155,50 @@ router.get('/:id', async (req, res) => {
     } catch (error) {
         console.error('Error fetching doctor:', error);
         res.status(500).json({ error: 'Failed to fetch doctor details' });
+    }
+});
+
+// POST upload verification document
+router.post('/verify', authenticateToken, uploadVerification.single('document'), async (req, res) => {
+    try {
+        if (req.user.role !== 'DOCTOR') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const { licenseNumber } = req.body;
+        if (!req.file) {
+            return res.status(400).json({ error: 'No document uploaded' });
+        }
+
+        if (!licenseNumber) {
+            return res.status(400).json({ error: 'License number is required' });
+        }
+
+        const documentPath = `uploads/verification/${req.file.filename}`;
+
+        const profile = await prisma.doctorProfile.upsert({
+            where: { userId: req.user.id },
+            update: {
+                licenseNumber,
+                licenseDocument: documentPath,
+                verificationStatus: 'PENDING'
+            },
+            create: {
+                userId: req.user.id,
+                licenseNumber,
+                licenseDocument: documentPath,
+                verificationStatus: 'PENDING',
+                specialties: []
+            }
+        });
+
+        res.json({
+            message: 'Verification document uploaded successfully. It will be reviewed by an admin.',
+            verificationStatus: 'PENDING'
+        });
+    } catch (error) {
+        console.error('Error uploading verification document:', error);
+        res.status(500).json({ error: 'Failed to upload verification document' });
     }
 });
 

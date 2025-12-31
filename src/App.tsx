@@ -21,6 +21,8 @@ import FindDoctorPage from "./pages/FindDoctorPage";
 import PatientListPage from './pages/PatientListPage';
 import VerifyOTPPage from "./pages/VerifyOTPPage";
 import MedicalAssessmentsPage from "./pages/MedicalAssessmentsPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +110,13 @@ const AnimatedRoutes = () => {
           <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
             <VerifyOTPPage />
           </motion.div>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin">
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.45 }}>
+              <AdminDashboardPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
       </Routes>
     </AnimatePresence>

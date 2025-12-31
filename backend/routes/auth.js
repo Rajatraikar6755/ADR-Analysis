@@ -1,29 +1,49 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const { z } = require('zod');
 const { PrismaClient } = require('@prisma/client');
 const { generateOTP, sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
 const { generateToken } = require('../utils/jwt');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(['PATIENT', 'DOCTOR', 'ADMIN'], {
+    errorMap: () => ({ message: "Role must be either PATIENT, DOCTOR or ADMIN" })
+  }),
+  licenseNumber: z.string().optional(),
+});
+
+// Multer setup for document uploads
+const multer = require('multer');
+const path = require('path');
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/verification/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
+const upload = multer({ storage: storage });
+
+// Ensure upload directory exists
+const fs = require('fs');
+if (!fs.existsSync('uploads/verification/')) {
+  fs.mkdirSync('uploads/verification/', { recursive: true });
+}
+
 // REGISTER
-router.post('/register', async (req, res) => {
+router.post('/register', upload.single('licenseDocument'), async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    // Validation
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    if (!['PATIENT', 'DOCTOR'].includes(role.toUpperCase())) {
-      return res.status(400).json({ error: 'Invalid role' });
-    }
+    const validatedData = registerSchema.parse(req.body);
+    const { name, email, password, role, licenseNumber } = validatedData;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -31,22 +51,46 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
+    // Validation for Doctor
+    if (role.toUpperCase() === 'DOCTOR') {
+      if (!licenseNumber) {
+        return res.status(400).json({ error: 'License number is required for doctors' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: 'Verification document is required for doctors' });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate OTP
     const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Create user
+    // Create user and profile
+    const userData = {
+      email,
+      password: hashedPassword,
+      name,
+      role: role.toUpperCase(),
+      verificationToken: otp,
+    };
+
+    if (role.toUpperCase() === 'DOCTOR') {
+      userData.doctorProfile = {
+        create: {
+          licenseNumber,
+          licenseDocument: req.file.path,
+          verificationStatus: 'PENDING'
+        }
+      };
+    }
+
     const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: role.toUpperCase(),
-        verificationToken: otp,
-      },
+      data: userData,
+      include: {
+        doctorProfile: true
+      }
     });
 
     // Send verification email
@@ -58,7 +102,10 @@ router.post('/register', async (req, res) => {
       email: user.email,
     });
   } catch (error) {
-    console.error('Register error:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    logger.error('Register error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
@@ -176,7 +223,7 @@ router.post('/login', async (req, res) => {
 
     // Check if verified
     if (!user.isVerified) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Please verify your email first',
         needsVerification: true,
         email: user.email,

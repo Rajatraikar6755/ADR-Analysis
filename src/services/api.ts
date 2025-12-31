@@ -37,10 +37,25 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
 // Auth API
 export const authAPI = {
-  register: async (name: string, email: string, password: string, role: 'patient' | 'doctor') => {
+  register: async (name: string, email: string, password: string, role: 'patient' | 'doctor', licenseNumber?: string, licenseDocument?: File) => {
+    if (role === 'doctor' && licenseDocument) {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('role', role.toUpperCase());
+      if (licenseNumber) formData.append('licenseNumber', licenseNumber);
+      formData.append('licenseDocument', licenseDocument);
+
+      return apiRequest('/auth/register', {
+        method: 'POST',
+        body: formData,
+      });
+    }
+
     return apiRequest('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role: role.toUpperCase() }),
+      body: JSON.stringify({ name, email, password, role: role.toUpperCase(), licenseNumber }),
     });
   },
 
