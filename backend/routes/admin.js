@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { verifyToken } = require('../utils/jwt');
 const logger = require('../utils/logger');
+const { sendDoctorVerificationEmail } = require('../utils/email');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -68,6 +69,19 @@ router.post('/verify-doctor', isAdmin, async (req, res) => {
         });
 
         logger.info(`Doctor ${updatedDoctor.user.name} verification status updated to ${status} by admin ${req.user.name}`);
+
+        // Send email notification to the doctor
+        try {
+            await sendDoctorVerificationEmail(
+                updatedDoctor.user.email,
+                updatedDoctor.user.name,
+                status
+            );
+            logger.info(`Verification email sent to ${updatedDoctor.user.email}`);
+        } catch (emailError) {
+            logger.error(`Failed to send verification email to ${updatedDoctor.user.email}:`, emailError);
+            // We don't return error here because the DB update was successful
+        }
 
         res.json({
             message: `Doctor ${status === 'APPROVED' ? 'verified' : 'rejected'} successfully`,
