@@ -376,6 +376,7 @@ const PatientDashboard: React.FC = () => {
           <Card className="relative overflow-hidden h-full flex flex-col border-healthcare-100">
             <img
               src="/bg-neaby-healthcare.png"
+              alt="Nearby Healthcare"
               className="absolute inset-0 w-full h-full object-cover z-0 opacity-200"
             />
             <div className="absolute inset-0 bg-healthcare-50 opacity-30 z-0"></div>
