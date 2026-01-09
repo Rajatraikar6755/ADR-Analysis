@@ -22,6 +22,7 @@ import PatientListPage from './pages/PatientListPage';
 import VerifyOTPPage from "./pages/VerifyOTPPage";
 import MedicalAssessmentsPage from "./pages/MedicalAssessmentsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import HealthcareSearchPage from "./pages/HealthcareSearchPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,11 @@ const AnimatedRoutes = () => {
         <Route path="/find-doctor" element={
           <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.4 }}>
             <FindDoctorPage />
+          </motion.div>
+        } />
+        <Route path="/healthcare-search" element={
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -24 }} transition={{ duration: 0.45 }}>
+            <HealthcareSearchPage />
           </motion.div>
         } />
         <Route path="/medical-assessments" element={

@@ -18,6 +18,7 @@ const logger = require('./utils/logger');
 const { initializeSocketServer } = require('./socket-server');
 const { performOCR } = require('./utils/ocr');
 const { searchKnowledgeBase } = require('./utils/knowledgeBase');
+const { getNearbyHealthcare } = require('./utils/geminiHealthcare');
 
 let fetch;
 
@@ -326,6 +327,24 @@ const startServer = async () => {
     } catch (error) {
       console.error('CRITICAL ERROR in /api/nearby-doctors:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Nearby Healthcare Search via Gemini (Protected)
+  app.post('/api/healthcare/nearby', authenticateToken, async (req, res) => {
+    const { lat, lon } = req.body;
+
+    if (!lat || !lon) {
+      return res.status(400).json({ error: 'Latitude and longitude are required.' });
+    }
+
+    try {
+      logger.info(`Searching for nearby healthcare at [${lat}, ${lon}] using Gemini`);
+      const results = await getNearbyHealthcare(lat, lon);
+      res.status(200).json(results);
+    } catch (error) {
+      console.error('Error in /api/healthcare/nearby:', error);
+      res.status(500).json({ error: 'Failed to fetch nearby healthcare information' });
     }
   });
 

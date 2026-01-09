@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, MessageSquare, Pill, FilePlus, FileText, Activity, Trash2, Loader2 } from 'lucide-react';
+import { AlertTriangle, MessageSquare, Pill, FilePlus, FileText, Activity, Trash2, Loader2, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import { PatientMessagingModal } from './PatientMessagingModal';
@@ -370,6 +370,30 @@ const PatientDashboard: React.FC = () => {
             </div>
           </Card>
         </motion.div>
+
+        {/* Card 4: Nearby Healthcare */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
+          <Card className="relative overflow-hidden h-full flex flex-col border-healthcare-100">
+            <div className="absolute inset-0 bg-healthcare-50 opacity-30 z-0"></div>
+            <div className="relative z-20 flex flex-col h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Nearby Healthcare</CardTitle>
+                <CardDescription className='text-gray-600'>Find hospitals & stores near you</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col justify-center">
+                <div className="flex items-center justify-center flex-col py-6">
+                  <MapPin className="h-12 w-12 text-healthcare-600 mb-4" />
+                  <p className="text-center text-gray-700 mb-4">
+                    Locate medical facilities and specialists grounded in real-time data
+                  </p>
+                  <Button asChild variant="outline" className="w-full bg-white hover:bg-healthcare-50 border-healthcare-200">
+                    <Link to="/healthcare-search">Search Nearby</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
@@ -537,54 +561,62 @@ const PatientDashboard: React.FC = () => {
       </div>
 
       {/* Patient Messaging Modal */}
-      {selectedDoctor && (
-        <PatientMessagingModal
-          open={messagingModalOpen}
-          onOpenChange={setMessagingModalOpen}
-          doctorId={selectedDoctor.id}
-          doctorName={selectedDoctor.name}
-          appointmentStatus={selectedDoctor.status}
-        />
-      )}
+      {
+        selectedDoctor && (
+          <PatientMessagingModal
+            open={messagingModalOpen}
+            onOpenChange={setMessagingModalOpen}
+            doctorId={selectedDoctor.id}
+            doctorName={selectedDoctor.name}
+            appointmentStatus={selectedDoctor.status}
+          />
+        )
+      }
 
       {/* Reschedule Modal */}
-      {rescheduleModalOpen && selectedAppointment && (
-        <RescheduleModal
-          open={rescheduleModalOpen}
-          onOpenChange={setRescheduleModalOpen}
-          appointmentId={selectedAppointment.id}
-          currentDate={selectedAppointment.appointmentDate}
-          currentTime={selectedAppointment.appointmentTime}
-          onSuccess={fetchAppointments}
-        />
-      )}
+      {
+        rescheduleModalOpen && selectedAppointment && (
+          <RescheduleModal
+            open={rescheduleModalOpen}
+            onOpenChange={setRescheduleModalOpen}
+            appointmentId={selectedAppointment.id}
+            currentDate={selectedAppointment.appointmentDate}
+            currentTime={selectedAppointment.appointmentTime}
+            onSuccess={fetchAppointments}
+          />
+        )
+      }
 
       {/* Incoming Call Modal */}
-      {incomingCall && (
-        <IncomingCallModal
-          open={!!incomingCall}
-          callerName={incomingCall.doctorName}
-          onAccept={handleAcceptCall}
-          onDecline={handleDeclineCall}
-        />
-      )}
+      {
+        incomingCall && (
+          <IncomingCallModal
+            open={!!incomingCall}
+            callerName={incomingCall.doctorName}
+            onAccept={handleAcceptCall}
+            onDecline={handleDeclineCall}
+          />
+        )
+      }
 
       {/* Video Call Modal */}
-      {callDoctor && (
-        <VideoCallModal
-          open={videoCallOpen}
-          localStream={webRTC.localStream}
-          remoteStream={webRTC.remoteStream}
-          isAudioMuted={webRTC.isAudioMuted}
-          isVideoOff={webRTC.isVideoOff}
-          connectionState={webRTC.connectionState}
-          remoteName={callDoctor.name}
-          onToggleAudio={webRTC.toggleAudio}
-          onToggleVideo={webRTC.toggleVideo}
-          onEndCall={handleEndCall}
-        />
-      )}
-    </div>
+      {
+        callDoctor && (
+          <VideoCallModal
+            open={videoCallOpen}
+            localStream={webRTC.localStream}
+            remoteStream={webRTC.remoteStream}
+            isAudioMuted={webRTC.isAudioMuted}
+            isVideoOff={webRTC.isVideoOff}
+            connectionState={webRTC.connectionState}
+            remoteName={callDoctor.name}
+            onToggleAudio={webRTC.toggleAudio}
+            onToggleVideo={webRTC.toggleVideo}
+            onEndCall={handleEndCall}
+          />
+        )
+      }
+    </div >
   );
 };
 

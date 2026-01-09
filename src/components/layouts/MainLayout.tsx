@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Heart,
   FileText,
-  Home
+  Home,
+  MapPin
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -106,11 +107,24 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <span>AI Assistant</span>
                   </Link>
                   <Link
+                    to="/find-doctor"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
+                    <Calendar className="h-5 w-5" />
+                    <span>Book Appointment</span>
+                  </Link>
+                  <Link
                     to="/medical-assessments"
                     className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
                   >
                     <FileText className="h-5 w-5" />
                     <span>Medical Assessments</span>
+                  </Link>
+                  <Link
+                    to="/healthcare-search"
+                    className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700"
+                  >
+                    <MapPin className="h-5 w-5" />
+                    <span>Nearby Healthcare</span>
                   </Link>
                 </>
               )}
@@ -144,15 +158,6 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <span>Admin Dashboard</span>
                   </Link>
                 </>
-              )}
-
-              {isPatient && (
-                <Link
-                  to="/find-doctor"
-                  className="flex items-center gap-3 p-3 rounded-md hover:bg-healthcare-50 text-gray-700 hover:text-healthcare-700">
-                  <Calendar className="h-5 w-5" />
-                  <span>Book Appointment</span>
-                </Link>
               )}
             </nav>
           </aside>
