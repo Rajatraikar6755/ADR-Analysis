@@ -7,6 +7,7 @@ const fs = require('fs');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const { emitToUser } = require('../utils/socketInstance');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -114,6 +115,12 @@ router.post('/send', authenticateToken, async (req, res) => {
       },
     });
 
+    // Emit socket event to recipient
+    emitToUser(recipientId, 'new_message', {
+      senderId,
+      messageId: message.id
+    });
+
     res.status(201).json({
       message: 'Message sent successfully',
       data: message,
@@ -167,6 +174,13 @@ router.post('/send-file', authenticateToken, upload.single('file'), async (req, 
           select: { id: true, name: true, email: true },
         },
       },
+    });
+
+    // Emit socket event to recipient
+    emitToUser(recipientId, 'new_message', {
+      senderId,
+      messageId: message.id,
+      hasAttachment: true
     });
 
     res.status(201).json({

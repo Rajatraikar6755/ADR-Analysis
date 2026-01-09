@@ -150,13 +150,27 @@ const DoctorDashboard: React.FC = () => {
     fetchUnreadCount();
     fetchUnreadCountsBySender();
 
-    // Poll for unread messages every 30 seconds
+    // Listen for new messages via socket to refresh unread counts
+    if (socket) {
+      const handleNewMessage = () => {
+        console.log('[Doctor Dashboard] New message notification, refreshing unread counts');
+        fetchUnreadCount();
+        fetchUnreadCountsBySender();
+      };
+
+      socket.on('new_message', handleNewMessage);
+      return () => {
+        socket.off('new_message', handleNewMessage);
+      };
+    }
+
+    // Poll for unread messages every 60 seconds (was 30s)
     const interval = setInterval(() => {
       fetchUnreadCount();
       fetchUnreadCountsBySender();
-    }, 30000);
+    }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [socket]);
 
   const fetchUnreadCount = async () => {
     try {

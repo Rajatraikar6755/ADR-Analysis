@@ -48,7 +48,7 @@ const startServer = async () => {
   // Rate limiting
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 500, // Increased from 100 to 500
     message: { error: 'Too many requests, please try again later.' }
   });
   app.use('/api/', limiter);
@@ -56,7 +56,7 @@ const startServer = async () => {
   // Specific limiter for AI and Auth
   const aiLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 20,
+    max: 50, // Increased from 20 to 50
     message: { error: 'AI request limit reached. Please try again in an hour.' }
   });
   app.use('/api/ai-assistant', aiLimiter);

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { MessageSquare, Send, Loader2, Lock, Check, CheckCheck, Paperclip, X, FileText, Image as ImageIcon, Download, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocket } from '@/hooks/useSocket';
 import { MessageContextMenu } from '@/components/shared/MessageContextMenu';
 import {
   AlertDialog,
@@ -60,6 +61,7 @@ export const PatientMessagingModal: React.FC<PatientMessagingModalProps> = ({
   appointmentStatus,
 }) => {
   const { user } = useAuth();
+  const { socket } = useSocket(user?.id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -119,11 +121,27 @@ export const PatientMessagingModal: React.FC<PatientMessagingModalProps> = ({
   useEffect(() => {
     if (open && isAppointmentConfirmed) {
       fetchMessages();
-      // Poll for new messages every 2 seconds
-      const interval = setInterval(fetchMessages, 2000);
+
+      // Listen for new messages via socket
+      if (socket) {
+        const handleNewMessage = (data: { senderId: string }) => {
+          if (data.senderId === doctorId) {
+            console.log('[Messaging] New message received via socket');
+            fetchMessages();
+          }
+        };
+
+        socket.on('new_message', handleNewMessage);
+        return () => {
+          socket.off('new_message', handleNewMessage);
+        };
+      }
+
+      // Fallback: Poll for new messages every 30 seconds (was 2s)
+      const interval = setInterval(fetchMessages, 30000);
       return () => clearInterval(interval);
     }
-  }, [open, isAppointmentConfirmed, fetchMessages]);
+  }, [open, isAppointmentConfirmed, fetchMessages, socket, doctorId]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive

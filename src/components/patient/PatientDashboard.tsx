@@ -113,10 +113,23 @@ const PatientDashboard: React.FC = () => {
     fetchAppointments();
     fetchUnreadCounts();
 
-    // Poll for unread counts every 10 seconds
-    const interval = setInterval(fetchUnreadCounts, 10000);
+    // Listen for new messages via socket to refresh unread counts
+    if (socket) {
+      const handleNewMessage = () => {
+        console.log('[Dashboard] New message notification, refreshing unread counts');
+        fetchUnreadCounts();
+      };
+
+      socket.on('new_message', handleNewMessage);
+      return () => {
+        socket.off('new_message', handleNewMessage);
+      };
+    }
+
+    // Poll for unread counts every 60 seconds (was 10s)
+    const interval = setInterval(fetchUnreadCounts, 60000);
     return () => clearInterval(interval);
-  }, [fetchAppointments, fetchUnreadCounts]);
+  }, [fetchAppointments, fetchUnreadCounts, socket]);
 
   // Socket.IO event listeners for video calls
   useEffect(() => {

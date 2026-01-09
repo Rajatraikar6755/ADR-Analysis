@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Send, Loader2, Check, CheckCheck, Paperclip, X, FileText, Image as ImageIcon, Download, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocket } from '@/hooks/useSocket';
 import { MessageContextMenu } from '@/components/shared/MessageContextMenu';
 import {
   AlertDialog,
@@ -59,6 +60,7 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
   recipientName,
 }) => {
   const { user } = useAuth();
+  const { socket } = useSocket(user?.id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -116,11 +118,27 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
   useEffect(() => {
     if (open && recipientId) {
       fetchMessages();
-      // Poll for new messages every 2 seconds
-      const interval = setInterval(fetchMessages, 2000);
+
+      // Listen for new messages via socket
+      if (socket) {
+        const handleNewMessage = (data: { senderId: string }) => {
+          if (data.senderId === recipientId) {
+            console.log('[Doctor Messaging] New message received via socket');
+            fetchMessages();
+          }
+        };
+
+        socket.on('new_message', handleNewMessage);
+        return () => {
+          socket.off('new_message', handleNewMessage);
+        };
+      }
+
+      // Fallback: Poll for new messages every 30 seconds (was 2s)
+      const interval = setInterval(fetchMessages, 30000);
       return () => clearInterval(interval);
     }
-  }, [open, recipientId, fetchMessages]);
+  }, [open, recipientId, fetchMessages, socket]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -385,8 +403,8 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
                           >
                             <div
                               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isOwnMessage
-                                  ? 'bg-healthcare-600 text-white rounded-br-none'
-                                  : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none'
+                                ? 'bg-healthcare-600 text-white rounded-br-none'
+                                : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none'
                                 }`}
                             >
                               {msg.hasAttachment && (

@@ -1,7 +1,5 @@
 const { Server } = require('socket.io');
-
-// Store active user connections: userId -> socketId
-const userSockets = new Map();
+const { setIo, userSockets } = require('./utils/socketInstance');
 
 // Store active calls: callId -> { doctorId, patientId, startTime }
 const activeCalls = new Map();
@@ -14,6 +12,8 @@ function initializeSocketServer(httpServer) {
             credentials: true
         }
     });
+
+    setIo(io);
 
     io.on('connection', (socket) => {
         console.log('[Socket] New connection:', socket.id);
