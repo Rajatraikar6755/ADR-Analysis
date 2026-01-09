@@ -374,6 +374,10 @@ const PatientDashboard: React.FC = () => {
         {/* Card 4: Nearby Healthcare */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
           <Card className="relative overflow-hidden h-full flex flex-col border-healthcare-100">
+            <img
+              src="/bg-neaby-healthcare.png"
+              className="absolute inset-0 w-full h-full object-cover z-0 opacity-200"
+            />
             <div className="absolute inset-0 bg-healthcare-50 opacity-30 z-0"></div>
             <div className="relative z-20 flex flex-col h-full">
               <CardHeader className="pb-2">
