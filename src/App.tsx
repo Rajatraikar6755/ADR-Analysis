@@ -19,7 +19,6 @@ import AssessmentDetailPage from "./pages/AssessmentDetailPage";
 import HealthProfilePage from "./pages/HealthProfilePage";
 import FindDoctorPage from "./pages/FindDoctorPage";
 import PatientListPage from './pages/PatientListPage';
-import VerifyOTPPage from "./pages/VerifyOTPPage";
 import MedicalAssessmentsPage from "./pages/MedicalAssessmentsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import HealthcareSearchPage from "./pages/HealthcareSearchPage";
@@ -110,11 +109,6 @@ const AnimatedRoutes = () => {
         <Route path="*" element={
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <NotFound />
-          </motion.div>
-        } />
-        <Route path="/verify-otp" element={
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
-            <VerifyOTPPage />
           </motion.div>
         } />
         <Route path="/admin" element={

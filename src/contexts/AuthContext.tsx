@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { authAPI } from "@/services/api";
+import { auth, googleProvider } from "@/config/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 type User = {
   id: string;
@@ -13,13 +15,8 @@ type User = {
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => Promise<{ needsVerification: boolean; email: string }>;
-  verifyOTP: (email: string, otp: string) => Promise<void>;
-  resendOTP: (email: string) => Promise<void>;
+  loginWithGoogle: (role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => Promise<void>;
   logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (token: string, newPassword: string) => Promise<void>;
   error: string | null;
 };
 
@@ -42,92 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  // Register function
-  const register = async (name: string, email: string, password: string, role: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => {
+  const loginWithGoogle = async (role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => {
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      const response = await authAPI.register(name, email, password, role, licenseNumber, licenseDocument);
-      toast.success(response.message);
-      return { needsVerification: true, email: response.email };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed";
-      setError(message);
-      toast.error(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      // 1. Sign in with Google via Firebase
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
 
-  // Verify OTP
-  const verifyOTP = async (email: string, otp: string) => {
-    setIsLoading(true);
-    setError(null);
+      // 2. Send the token to the backend
+      const response = await authAPI.loginWithGoogle(idToken, role, licenseNumber, licenseDocument);
 
-    try {
-      const response = await authAPI.verifyOTP(email, otp);
-
-      // Store token and user
+      // 3. Store token and user from our backend
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
 
-      toast.success(response.message);
+      toast.success(response.message || "Authentication successful!");
 
-      // Redirect based on role
-      if (response.user.role === "PATIENT") {
-        navigate("/patient-dashboard");
-      } else if (response.user.role === "ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/doctor-dashboard");
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Verification failed";
-      setError(message);
-      toast.error(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Resend OTP
-  const resendOTP = async (email: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await authAPI.resendOTP(email);
-      toast.success(response.message);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to resend OTP";
-      setError(message);
-      toast.error(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Login function
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await authAPI.login(email, password);
-
-      // Store token and user
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
-      setUser(response.user);
-
-      toast.success(response.message);
-
-      // Redirect based on role
+      // 4. Redirect based on role
       if (response.user.role === "PATIENT") {
         navigate("/patient-dashboard");
       } else if (response.user.role === "ADMIN") {
@@ -136,79 +67,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate("/doctor-dashboard");
       }
     } catch (err: any) {
-      const message = err.message || "Login failed";
+      const message = err.message || "Authentication failed";
       setError(message);
-
-      // Handle email not verified case
-      if (err.needsVerification) {
-        toast.error("Please verify your email first");
-        navigate(`/verify-otp?email=${err.email}`);
-      } else {
-        toast.error(message);
-      }
+      toast.error(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Logout function
   const logout = () => {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    auth.signOut(); // Ensure we sign out of Firebase too
     toast.success("Logged out successfully");
     navigate("/");
-  };
-
-  // Forgot Password
-  const forgotPassword = async (email: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await authAPI.forgotPassword(email);
-      toast.success(response.message);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to send reset email";
-      setError(message);
-      toast.error(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Reset Password
-  const resetPassword = async (token: string, newPassword: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await authAPI.resetPassword(token, newPassword);
-      toast.success(response.message);
-      navigate("/login");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to reset password";
-      setError(message);
-      toast.error(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
     <AuthContext.Provider value={{
       user,
       isLoading,
-      login,
-      register,
-      verifyOTP,
-      resendOTP,
+      loginWithGoogle,
       logout,
-      forgotPassword,
-      resetPassword,
       error
     }}>
       {children}

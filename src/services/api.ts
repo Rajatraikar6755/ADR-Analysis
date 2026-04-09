@@ -37,60 +37,24 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
 // Auth API
 export const authAPI = {
-  register: async (name: string, email: string, password: string, role: 'patient' | 'doctor', licenseNumber?: string, licenseDocument?: File) => {
-    if (role === 'doctor' && licenseDocument) {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('password', password);
+  loginWithGoogle: async (idToken: string, role?: 'patient' | 'doctor', licenseNumber?: string, licenseDocument?: File) => {
+    const formData = new FormData();
+    formData.append('idToken', idToken);
+    
+    if (role) {
       formData.append('role', role.toUpperCase());
-      if (licenseNumber) formData.append('licenseNumber', licenseNumber);
+    }
+    
+    if (role === 'doctor' && licenseDocument) {
       formData.append('licenseDocument', licenseDocument);
-
-      return apiRequest('/auth/register', {
-        method: 'POST',
-        body: formData,
-      });
+      if (licenseNumber) {
+        formData.append('licenseNumber', licenseNumber);
+      }
     }
 
-    return apiRequest('/auth/register', {
+    return apiRequest('/auth/google', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role: role.toUpperCase(), licenseNumber }),
-    });
-  },
-
-  verifyOTP: async (email: string, otp: string) => {
-    return apiRequest('/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email, otp }),
-    });
-  },
-
-  resendOTP: async (email: string) => {
-    return apiRequest('/auth/resend-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  },
-
-  login: async (email: string, password: string) => {
-    return apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  },
-
-  forgotPassword: async (email: string) => {
-    return apiRequest('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  },
-
-  resetPassword: async (token: string, newPassword: string) => {
-    return apiRequest('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
+      body: formData,
     });
   },
 };
