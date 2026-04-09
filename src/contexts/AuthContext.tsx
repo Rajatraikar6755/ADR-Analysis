@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { authAPI } from "@/services/api";
 import { auth, googleProvider } from "@/config/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 type User = {
   id: string;
@@ -16,6 +16,8 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   loginWithGoogle: (role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  registerWithEmail: (name: string, email: string, password: string, role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => Promise<void>;
   logout: () => void;
   error: string | null;
 };
@@ -39,35 +41,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
+  const handleBackendAuth = async (idToken: string, role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File, name?: string) => {
+    // Send the token to the backend
+    const response = await authAPI.loginWithFirebase(idToken, role, licenseNumber, licenseDocument, name);
+
+    // Store token and user from our backend
+    localStorage.setItem("token", response.token);
+    localStorage.setItem("user", JSON.stringify(response.user));
+    setUser(response.user);
+
+    toast.success(response.message || "Authentication successful!");
+
+    // Redirect based on role
+    if (response.user.role === "PATIENT") {
+      navigate("/patient-dashboard");
+    } else if (response.user.role === "ADMIN") {
+      navigate("/admin");
+    } else {
+      navigate("/doctor-dashboard");
+    }
+  };
+
   const loginWithGoogle = async (role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => {
     setIsLoading(true);
     setError(null);
-    
     try {
-      // 1. Sign in with Google via Firebase
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
-
-      // 2. Send the token to the backend
-      const response = await authAPI.loginWithGoogle(idToken, role, licenseNumber, licenseDocument);
-
-      // 3. Store token and user from our backend
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
-      setUser(response.user);
-
-      toast.success(response.message || "Authentication successful!");
-
-      // 4. Redirect based on role
-      if (response.user.role === "PATIENT") {
-        navigate("/patient-dashboard");
-      } else if (response.user.role === "ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/doctor-dashboard");
-      }
+      await handleBackendAuth(idToken, role, licenseNumber, licenseDocument);
     } catch (err: any) {
-      const message = err.message || "Authentication failed";
+      const message = err.message || "Google Authentication failed";
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await result.user.getIdToken();
+      // Role doesn't matter for login
+      await handleBackendAuth(idToken);
+    } catch (err: any) {
+      let message = err.message || "Authentication failed";
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        message = "Invalid email or password.";
+      }
+      setError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const registerWithEmail = async (name: string, email: string, password: string, role?: "patient" | "doctor", licenseNumber?: string, licenseDocument?: File) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await result.user.getIdToken();
+      await handleBackendAuth(idToken, role, licenseNumber, licenseDocument, name);
+    } catch (err: any) {
+      let message = err.message || "Registration failed";
+      if (err.code === 'auth/email-already-in-use') {
+        message = "An account with this email already exists.";
+      } else if (err.code === 'auth/weak-password') {
+        message = "Password should be at least 6 characters.";
+      }
       setError(message);
       toast.error(message);
       throw err;
@@ -90,6 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       isLoading,
       loginWithGoogle,
+      loginWithEmail,
+      registerWithEmail,
       logout,
       error
     }}>

@@ -27,9 +27,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Unified endpoint for Google Login / Registration
+// Unified endpoint for Firebase (Google, Email/Password) Login / Registration
 // For Doctors, it expects 'licenseDocument' file attached and role='doctor', licenseNumber.
-router.post('/google', upload.single('licenseDocument'), async (req, res) => {
+router.post('/firebase', upload.single('licenseDocument'), async (req, res) => {
   try {
     const { idToken, role, licenseNumber } = req.body;
 
@@ -42,7 +42,7 @@ router.post('/google', upload.single('licenseDocument'), async (req, res) => {
     const { email, name, uid } = decodedToken;
 
     if (!email) {
-      return res.status(400).json({ error: 'Email is required from Google Auth' });
+      return res.status(400).json({ error: 'Email is required from Firebase Auth' });
     }
 
     // Check if user exists
@@ -66,7 +66,7 @@ router.post('/google', upload.single('licenseDocument'), async (req, res) => {
       // Create new user
       const userData = {
         email,
-        name: req.body.name || name || 'Google User',
+        name: req.body.name || name || 'New User',
         role: userRole,
         isVerified: true, // Auto-verified by Google
         password: '', // Kept empty or null based on our schema we made it optional, but let's set it to null explicitly if field allows or ignore it if not in data object
@@ -92,10 +92,10 @@ router.post('/google', upload.single('licenseDocument'), async (req, res) => {
         }
       });
       
-      logger.info(`New user registered via Google: ${email}`);
+      logger.info(`New user registered via Firebase: ${email}`);
     } else {
       // User exists -> Login Flow
-      logger.info(`Existing user logged in via Google: ${email}`);
+      logger.info(`Existing user logged in via Firebase: ${email}`);
     }
 
     // Generate JWT token for our backend session
@@ -114,7 +114,7 @@ router.post('/google', upload.single('licenseDocument'), async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Google Auth error:', error);
+    logger.error('Firebase Auth error:', error);
     res.status(500).json({ error: 'Authentication failed. ' + error.message });
   }
 });

@@ -37,12 +37,16 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
 // Auth API
 export const authAPI = {
-  loginWithGoogle: async (idToken: string, role?: 'patient' | 'doctor', licenseNumber?: string, licenseDocument?: File) => {
+  loginWithFirebase: async (idToken: string, role?: 'patient' | 'doctor', licenseNumber?: string, licenseDocument?: File, name?: string) => {
     const formData = new FormData();
     formData.append('idToken', idToken);
     
     if (role) {
       formData.append('role', role.toUpperCase());
+    }
+
+    if (name) {
+      formData.append('name', name);
     }
     
     if (role === 'doctor' && licenseDocument) {
@@ -52,7 +56,7 @@ export const authAPI = {
       }
     }
 
-    return apiRequest('/auth/google', {
+    return apiRequest('/auth/firebase', {
       method: 'POST',
       body: formData,
     });
