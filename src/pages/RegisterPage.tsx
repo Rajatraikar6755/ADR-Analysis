@@ -22,7 +22,7 @@ const RegisterPage: React.FC = () => {
           <div className="bg-vibrantBlue p-2 rounded-xl">
             <Activity className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">Dr. AI Patient Care</span>
+          <span className="text-xl font-bold tracking-tight text-white">ADR Analysis</span>
         </div>
 
         <motion.div 
@@ -37,7 +37,7 @@ const RegisterPage: React.FC = () => {
                 Secure & Compliant Architecture
              </h2>
              <p className="text-base text-gray-300 font-medium leading-relaxed">
-               By joining Dr. AI, you're entering a highly secure ecosystem explicitly tailored to protect sensitive medical data. We employ enterprise-grade encryption to ensure peace of mind for both patients and healthcare providers.
+               By joining ADR Analysis, you're entering a highly secure ecosystem explicitly tailored to protect sensitive medical data. We employ enterprise-grade encryption to ensure peace of mind for both patients and healthcare providers.
              </p>
           </div>
         </motion.div>
@@ -55,7 +55,7 @@ const RegisterPage: React.FC = () => {
              <div className="bg-vibrantBlue p-2 rounded-xl">
                <Activity className="h-6 w-6 text-white" />
              </div>
-             <span className="text-2xl font-bold text-gray-900">Dr. AI</span>
+             <span className="text-2xl font-bold text-gray-900">ADR Analysis</span>
           </div>
 
           <RegisterForm />

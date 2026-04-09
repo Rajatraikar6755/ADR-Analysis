@@ -22,7 +22,7 @@ const LoginPage: React.FC = () => {
           <div className="bg-vibrantBlue p-2 rounded-xl">
             <Activity className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">Dr. AI Patient Care</span>
+          <span className="text-xl font-bold tracking-tight text-white">ADR Analysis</span>
         </div>
 
         <motion.div 
@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
         </motion.div>
         
         <div className="relative z-10 text-sm text-gray-400 font-medium">
-          © 2024 Dr. AI Research Group. All rights reserved.
+          © 2024 ADR Analysis Research Group. All rights reserved.
         </div>
       </div>
 
@@ -52,7 +52,7 @@ const LoginPage: React.FC = () => {
              <div className="bg-vibrantBlue p-2 rounded-xl">
                <Activity className="h-6 w-6 text-white" />
              </div>
-             <span className="text-2xl font-bold text-gray-900">Dr. AI</span>
+             <span className="text-2xl font-bold text-gray-900">ADR Analysis</span>
           </div>
 
           <LoginForm />
