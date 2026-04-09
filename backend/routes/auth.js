@@ -82,8 +82,8 @@ router.post('/firebase', upload.single('licenseDocument'), async (req, res) => {
         };
       }
 
-      // We explicitly don't pass password since we made it String?
-      delete userData.password;
+      // Satisfy Prisma schema validation even if client isn't updated
+      userData.password = '';
 
       user = await prisma.user.create({
         data: userData,
