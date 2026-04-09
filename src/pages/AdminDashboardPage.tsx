@@ -28,7 +28,7 @@ const AdminDashboardPage: React.FC = () => {
     const fetchPendingDoctors = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/admin/pending-doctors', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/admin/pending-doctors`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -48,7 +48,7 @@ const AdminDashboardPage: React.FC = () => {
 
     const handleVerify = async (doctorId: string, status: 'APPROVED' | 'REJECTED') => {
         try {
-            const response = await fetch('http://localhost:3001/api/admin/verify-doctor', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/admin/verify-doctor`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const AdminDashboardPage: React.FC = () => {
                                                 <td className="py-4 px-4 font-mono text-sm">{doctor.licenseNumber}</td>
                                                 <td className="py-4 px-4">
                                                     <a
-                                                        href={doctor.licenseDocument ? (doctor.licenseDocument.startsWith('http') ? doctor.licenseDocument : `http://localhost:3001/${doctor.licenseDocument}`) : '#'}
+                                                        href={doctor.licenseDocument ? (doctor.licenseDocument.startsWith('http') ? doctor.licenseDocument : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/${doctor.licenseDocument}`) : '#'}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className={`flex items-center gap-1 text-sm font-medium ${doctor.licenseDocument ? 'text-vibrantBlue hover:underline' : 'text-gray-400 cursor-not-allowed'}`}

@@ -265,7 +265,7 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
                           </div>
                         </div>
                         <Button variant="ghost" size="sm" asChild>
-                          <a href={`http://localhost:3001/${doc.path}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/${doc.path}`} target="_blank" rel="noopener noreferrer">
                             View
                           </a>
                         </Button>

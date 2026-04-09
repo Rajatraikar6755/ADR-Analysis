@@ -54,7 +54,7 @@ const DoctorProfile: React.FC = () => {
             formData.append('licenseNumber', profile.licenseNumber);
 
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3001/api/doctors/verify', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/doctors/verify`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData
@@ -87,7 +87,7 @@ const DoctorProfile: React.FC = () => {
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3001/api/doctors/profile', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/doctors/profile`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -115,7 +115,7 @@ const DoctorProfile: React.FC = () => {
         try {
             setIsSaving(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3001/api/doctors/profile', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/doctors/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ const DoctorProfile: React.FC = () => {
             formData.append('image', file);
 
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3001/api/doctors/profile/image', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/doctors/profile/image`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData
@@ -277,7 +277,7 @@ const DoctorProfile: React.FC = () => {
                     <CardContent className="flex flex-col items-center space-y-4">
                         <Avatar className="h-40 w-40 border-4 border-white shadow-lg">
                             <AvatarImage
-                                src={profile.profilePicture ? `http://localhost:3001/${profile.profilePicture}` : undefined}
+                                src={profile.profilePicture ? `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/${profile.profilePicture}` : undefined}
                                 className="object-cover"
                             />
                             <AvatarFallback className="text-4xl bg-healthcare-100 text-healthcare-600">

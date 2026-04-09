@@ -243,7 +243,7 @@ const PatientDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}`,
         {
           method: 'DELETE',
           headers: {

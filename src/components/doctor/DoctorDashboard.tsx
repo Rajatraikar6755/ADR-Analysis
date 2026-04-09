@@ -175,7 +175,7 @@ const DoctorDashboard: React.FC = () => {
   const fetchUnreadCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/messages/unread/count', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/messages/unread/count`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -190,7 +190,7 @@ const DoctorDashboard: React.FC = () => {
   const fetchUnreadCountsBySender = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/messages/unread/by-sender', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/messages/unread/by-sender`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -206,7 +206,7 @@ const DoctorDashboard: React.FC = () => {
     try {
       setIsLoadingAppointments(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/appointments/doctor/appointments', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -225,7 +225,7 @@ const DoctorDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}/status`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}/status`,
         {
           method: 'PUT',
           headers: {
@@ -249,7 +249,7 @@ const DoctorDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}/reschedule-action`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}/reschedule-action`,
         {
           method: 'PUT',
           headers: {
@@ -273,7 +273,7 @@ const DoctorDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}/complete`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}/complete`,
         {
           method: 'PUT',
           headers: {
@@ -302,7 +302,7 @@ const DoctorDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}`,
         {
           method: 'DELETE',
           headers: {
@@ -386,7 +386,7 @@ const DoctorDashboard: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/assessments/create', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/assessments/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

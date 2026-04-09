@@ -58,7 +58,7 @@ const FindDoctor: React.FC = () => {
   const fetchDoctors = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:3001/api/appointments/doctors');
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/doctors`);
       if (!response.ok) throw new Error('Failed to fetch doctors');
       const data = await response.json();
 
@@ -66,7 +66,7 @@ const FindDoctor: React.FC = () => {
       const doctorsWithProfiles = await Promise.all(
         data.map(async (doctor: Doctor) => {
           try {
-            const profileResponse = await fetch(`http://localhost:3001/api/doctors/${doctor.id}`);
+            const profileResponse = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/doctors/${doctor.id}`);
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
               return {
@@ -98,7 +98,7 @@ const FindDoctor: React.FC = () => {
   const fetchMyAppointments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/appointments/patient/appointments', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/patient/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch appointments');
@@ -137,7 +137,7 @@ const FindDoctor: React.FC = () => {
       setIsBooking(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://localhost:3001/api/appointments/book', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ const FindDoctor: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}/status`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}/status`,
         {
           method: 'PUT',
           headers: {
@@ -203,7 +203,7 @@ const FindDoctor: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:3001/api/appointments/${appointmentId}`,
+        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}`,
         {
           method: 'DELETE',
           headers: {
@@ -252,7 +252,7 @@ const FindDoctor: React.FC = () => {
                       <Avatar className="h-16 w-16">
                         <AvatarImage
                           src={doctor.profile?.profilePicture
-                            ? `http://localhost:3001/${doctor.profile.profilePicture}`
+                            ? `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/${doctor.profile.profilePicture}`
                             : `https://ui-avatars.com/api/?name=${doctor.name.replace(' ', '+')}&background=random`}
                           alt={doctor.name}
                         />

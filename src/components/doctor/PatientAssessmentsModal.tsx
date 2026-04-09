@@ -32,7 +32,7 @@ export const PatientAssessmentsModal: React.FC<PatientAssessmentsModalProps> = (
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3001/api/appointments/patient/${patientId}/assessments`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/patient/${patientId}/assessments`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {

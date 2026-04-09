@@ -39,7 +39,7 @@ export const PatientAssessments: React.FC = () => {
         try {
             setIsLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3001/api/assessments/patient', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/assessments/patient`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

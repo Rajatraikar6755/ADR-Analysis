@@ -27,7 +27,7 @@ const getAIResponse = async (message: string, image: File | null): Promise<strin
   // The browser will now set the correct Content-Type automatically.
   const token = localStorage.getItem('token');
 
-  const response = await fetch("http://localhost:3001/api/ai-assistant", {
+  const response = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/ai-assistant`, {
     method: "POST",
     headers: {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),

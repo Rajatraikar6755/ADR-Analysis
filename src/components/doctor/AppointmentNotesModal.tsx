@@ -34,7 +34,7 @@ export const AppointmentNotesModal: React.FC<AppointmentNotesModalProps> = ({
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:3001/api/appointments/${appointmentId}/notes`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/appointments/${appointmentId}/notes`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -89,7 +89,7 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
           .map((m: Message) => m.id);
 
         if (toDeliver.length > 0) {
-          await fetch('http://localhost:3001/api/messages/mark-delivered', {
+          await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/messages/mark-delivered`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
           .filter((m: Message) => m.receiverId === user?.id && !m.isRead);
 
         for (const msg of toRead) {
-          await fetch(`http://localhost:3001/api/messages/${msg.id}/read`, {
+          await fetch(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/api/messages/${msg.id}/read`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
           });

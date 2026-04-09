@@ -10,7 +10,7 @@ export const useSocket = (userId: string | undefined) => {
         if (!userId) return;
 
         // Create socket connection
-        const newSocket = io('http://localhost:3001', {
+        const newSocket = io(`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}`, {
             transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionAttempts: 5,
